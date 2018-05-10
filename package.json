@@ -15,6 +15,7 @@
   "author": "stephen.d.francis@gmail.com",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/react-dom": "^16.0.5"
   },
   "devDependencies": {
     "@types/loglevel": "^1.5.3",
@@ -24,7 +25,7 @@
     "lapis": "https://github.com/stephenfrancis/lapis.git",
     "loglevel": "^1.6.0",
     "react": "^16.3.1",
-    "react-dom": "^16.1.2",
+    "react-dom": "^16.3.2",
     "ts-loader": "^4.2.0",
     "typescript": "^2.8.3",
     "underscore": "1.8.3",

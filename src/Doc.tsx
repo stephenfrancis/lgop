@@ -51,7 +51,25 @@ export default class Doc extends React.Component<Props, State> {
   render() {
     return (
       <div>
-        {this.state.map.getSVG()}
+        {this.state.ready && this.renderReady()}
+        {!this.state.ready && this.renderUnready()}
+      </div>
+    );
+  }
+
+
+  renderUnready() {
+    return (
+      <div>Loading...</div>
+    );
+  }
+
+
+  renderReady() {
+    return (
+      <div dangerouslySetInnerHTML={{
+        __html: this.state.map.getSVG(),
+      }}>
       </div>
     );
   }

@@ -15,6 +15,12 @@ const Log = RootLog.getLogger("lgop.App");
 
 const Store = new AjaxStore(null, "./");
 Store.setModeServer();
+Store.setResponseConverter(function (url: string, str: string): any {
+  return {
+    id: url,
+    content: str,
+  };
+});
 
 
 interface Props {}

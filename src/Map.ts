@@ -137,7 +137,7 @@ export class Location {
 
 
   public getSVG(): string {
-    return "<rect x=\"0\" y=\"0\" width=\"200\" height=\"60\"><text>" + this.name + "</text></rect>";
+    return "<rect x=\"0\" y=\"0\" width=\"40\" height=\"20\" stroke=\"black\" fill=\"white\"><text  font-family=\"Verdana\" font-size=\"35\">" + this.name + "</text></rect>";
   }
 
 }
