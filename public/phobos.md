@@ -21,6 +21,7 @@
     * Scap of Paper
   * N: End Of Hallway
 * Basement
+  * U: End Of Hallway
 * Observation Room
   * N: Closet
   * D: End Of Hallway
@@ -31,3 +32,4 @@
   * S: Observation Room
 * Roof
   * C: Martian Desert
+  * D: Observation Room

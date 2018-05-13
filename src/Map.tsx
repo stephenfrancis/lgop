@@ -1,0 +1,298 @@
+
+import * as React from "react";
+import RootLog from "loglevel";
+// import Snap from "snapsvg";
+
+const Log = RootLog.getLogger("lgop.Map");
+
+
+export default class Map {
+  private first_location: Location;
+  private id: string;
+  private title: string;
+
+  constructor(id: string, content: string) {
+    this.id = id;
+    this.parseContent(content);
+  }
+
+
+  public getFirstLocation(): Location {
+    return this.first_location;
+  }
+
+
+  public getSVG() {
+    const children = [];
+    this.first_location.appendSVG(children);
+    return (
+      <svg height="800" version="1.1" width="1200" xmlns="http://www.w3.org/2000/svg">
+        {children}
+      </svg>
+    );
+  }
+
+
+  public getTitle(): string {
+    return this.title;
+  }
+
+
+  private isDirection(line: string, parse_state: any): boolean {
+    let match = line.match(/^ {2}\* (N|NE|E|SE|S|SW|W|NW|U|D):(.*)$/);
+    if (match && match.length > 2 && parse_state.location) {
+      parse_state.location.addDirection(match[1], match[2]);
+      return true;
+    }
+    return false;
+  }
+
+
+  private isLocation(line: string, parse_state: any): boolean {
+    let match = line.match(/^\* (.*)$/);
+    if (match && match.length > 1) {
+      parse_state.location = Location.getLocation(match[1]);
+      if (!this.first_location) {
+        this.first_location = parse_state.location;
+        this.first_location.setPosition(0, 0, 0);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  private isTitle(line: string, parse_state: any): boolean {
+    const match = line.match(/^# (.*)/);
+    if (match) {
+      this.title = match[1];
+    }
+    return !!match;
+  }
+
+
+  private parseContent(content: string) {
+    const that = this;
+    const lines = content.split(/\r\n|\n/);
+    const parse_state = {
+      inside_room: false,
+    }
+    lines.forEach(function (line) {
+      let done = false;
+      done = done || that.isDirection(line, parse_state);
+      done = done || that.isLocation(line, parse_state);
+      done = done || that.isTitle(line, parse_state);
+      if (!done) {
+        that.reportError("unused line: " + line);
+      }
+    });
+  }
+
+
+  private reportError(str: string): void {
+    console.log(this.id + ": " + str); // eslint-disable-line no-console
+  }
+
+}
+
+
+export class Location {
+  private name: string;
+  private directions: any;
+  private positioned: boolean = false;
+  private height: number = 24;
+  private width: number = 120;
+  private row: number;
+  private col: number;
+  private z: number;
+  // private x: number;
+  // private y: number;
+  private static locations: any = {};
+  private static min_row: number = 0;
+  private static min_col: number = 0;
+  // private static min_z: number = 0;
+  // private static max_z: number = 0;
+  private static col_z_extrema = [];
+  private static row_z_extrema = [];
+  // private static col_width: Array<number> = [];
+  // private static row_height: Array<number> = [];
+  private static direction_codes: any = {
+    "N" : { col:  0, row: -1, z:  0, fx:  56, fy:  0, tx:  56, ty: 24, ang:   0, },
+    "NE": { col:  0, row: -1, z:  0, fx: 120, fy:  0, tx:   0, ty: 24, ang:  45, },
+    "E" : { col:  1, row:  0, z:  0, fx: 120, fy:  8, tx:   0, ty:  8, ang:  90, },
+    "SE": { col:  1, row:  1, z:  0, fx: 120, fy: 24, tx:   0, ty:  0, ang: 135, },
+    "S" : { col:  0, row:  1, z:  0, fx:  64, fy: 24, tx:  64, ty:  0, ang: 180, },
+    "SW": { col: -1, row:  1, z:  0, fx:   0, fy: 24, tx: 120, ty:  0, ang: 225, },
+    "W" : { col: -1, row:  0, z:  0, fx:   0, fy: 16, tx: 120, ty: 16, ang: 270, },
+    "NW": { col: -1, row: -1, z:  0, fx:   0, fy:  0, tx: 120, ty: 24, ang: 315, },
+    "U" : { col:  0, row:  0, z:  1, fx:  96, fy:  0, tx:  16, ty: 24, ang:  45, },
+    "D" : { col:  0, row:  0, z: -1, fx:  24, fy: 24, tx: 104, ty:  0, ang: 225, },
+  };
+
+  constructor(name: string) {
+    this.name = name;
+    this.directions = {};
+    Log.debug(`new Location: ${name}`);
+  }
+
+
+  public addDirection(direction: string, other_location: string) {
+    if (!Location.direction_codes[direction]) {
+      throw new Error(`invalid direction code: ${direction}`);
+    }
+    if (this.directions[direction]) {
+      throw new Error(`direction already specified: ${direction}`);
+    }
+    this.directions[direction] = Location.getLocation(other_location);
+    this.positionRelativeIfNecessary(direction);
+  }
+
+
+  public appendLineSVG(elements, dir: string, other_location: Location): void {
+    const this_pos = this.getPosition();
+    const other_pos = other_location.getPosition();
+    const key = this.getId() + "_" + other_location.getId();
+    const delta = Location.direction_codes[dir];
+    const x2 = other_pos.x + delta.tx;
+    const y2 = other_pos.y + delta.ty;
+    elements.push(
+      <line key={key}
+        x1={this_pos.x + delta.fx}
+        y1={this_pos.y + delta.fy}
+        x2={x2}
+        y2={y2} />
+    );
+    const points = `${x2}, ${y2} ${x2 - 3}, ${y2 + 6} ${x2 + 3}, ${y2 + 6}`;
+    const transform = `rotate(${delta.ang}, ${x2}, ${y2})`;
+    elements.push(
+      <polygon key={key + "_arrowhead"} points={points} transform={transform} />
+    );
+  }
+
+
+  public appendSVG(elements, done_locations?): void {
+    done_locations = done_locations || [];
+    if (done_locations.indexOf(this) > -1) {
+      return;
+    }
+    elements.push(this.getBoxSVG());
+    elements.push(this.getTextSVG());
+    done_locations.push(this);
+    Object.keys(this.directions).forEach(dir => {
+      this.directions[dir].appendSVG(elements, done_locations);
+      this.appendLineSVG(elements, dir, this.directions[dir]);
+    });
+  }
+
+
+  public checkPositioned() {
+    if (!this.positioned) {
+      throw new Error(`location not positioned: ${this.getId()}`);
+    }
+  }
+
+
+  public getBoxSVG() {
+    this.checkPositioned();
+    const key = this.getId() + "_box";
+    const pos = this.getPosition();
+    return (
+      <rect x={pos.x} y={pos.y} width={this.width} height={this.height} key={key} />
+    );
+  }
+
+
+  public getDirection(direction: string): Location {
+    if (!Location.direction_codes[direction]) {
+      throw new Error(`invalid direction code: ${direction}`);
+    }
+    if (!this.directions[direction]) {
+      throw new Error(`no location in this direction: ${direction}`);
+    }
+    return this.directions[direction];
+  }
+
+
+  public getDirections(): any {
+    return this.directions;
+  }
+
+
+  public getId() {
+    return this.name.replace(/\s+/g, "_").toLowerCase();
+  }
+
+
+  public static getLocation(name: string) {
+    name = name.trim();
+    if (!Location.locations[name]) {
+      Location.locations[name] = new Location(name);
+    }
+    return Location.locations[name];
+  }
+
+
+  public getPosition(): { x: number, y: number } {
+    const min_z = Math.min(Location.col_z_extrema[this.col].min, Location.row_z_extrema[this.row].min);
+    const max_z = Math.max(Location.col_z_extrema[this.col].max, Location.row_z_extrema[this.row].max);
+    const out = {
+      x: 120 + 100 * (this.z - Location.col_z_extrema[this.col].min),
+      y: 120 +  40 * (Location.row_z_extrema[this.row].max - this.z),
+    };
+    for (let i = Location.min_col; i < this.col; i += 1) {
+      out.x += (Location.col_z_extrema[i].max - Location.col_z_extrema[i].min + 1) * 150;
+    }
+    for (let i = Location.min_row; i < this.row; i += 1) {
+      out.y += (Location.row_z_extrema[i].max - Location.row_z_extrema[i].min + 1) *  50;
+    }
+    Log.debug(`getPosition() for ${this.getId()} ${this.row}, ${this.col}, ${this.z}, ${Location.min_row}, ${Location.min_col}, ${min_z}, ${max_z} returns ${out.x}, ${out.y}`);
+    return out;
+  }
+
+  public getTextSVG() {
+    this.checkPositioned();
+    const pos = this.getPosition();
+    const key = this.getId() + "_text";
+    return (
+      <text x={pos.x + 4} y={pos.y + 16} key={key}>{this.name}</text>
+    );
+  }
+
+
+  private positionRelativeIfNecessary(direction: string) {
+    this.checkPositioned();
+    const other_location: Location = this.directions[direction];
+    if (!other_location.positioned) {
+      const delta = Location.direction_codes[direction];
+      if (delta) {
+        other_location.setPosition(this.col + delta.col, this.row + delta.row, this.z + delta.z);
+      }
+    }
+  }
+
+
+  public setPosition(col: number, row: number, z: number) {
+    this.col = col;
+    this.row = row;
+    this.z = z;
+    this.positioned = true;
+    Location.setRowColumnZ(col, row, z);
+  }
+
+
+  private static setRowColumnZ(col: number, row: number, z: number) {
+    this.min_col = Math.min(this.min_col, col);
+    this.min_row = Math.min(this.min_row, row);
+    // this.col_width[col] = this.col_width[col] || 200;
+    // this.row_height[row] = this.row_height[row] || 100;
+    // this.min_z = Math.min(this.min_z, z);
+    // this.max_z = Math.max(this.max_z, z);
+    this.col_z_extrema[col] = this.col_z_extrema[col] || { min: 0, max: 0, };
+    this.col_z_extrema[col].min = Math.min(this.col_z_extrema[col].min, z);
+    this.col_z_extrema[col].max = Math.max(this.col_z_extrema[col].max, z);
+
+    this.row_z_extrema[row] = this.row_z_extrema[row] || { min: 0, max: 0, };
+    this.row_z_extrema[row].min = Math.min(this.row_z_extrema[row].min, z);
+    this.row_z_extrema[row].max = Math.max(this.row_z_extrema[row].max, z);
+  }
+
+}

@@ -49,12 +49,10 @@ export default class Doc extends React.Component<Props, State> {
 
 
   render() {
-    return (
-      <div>
-        {this.state.ready && this.renderReady()}
-        {!this.state.ready && this.renderUnready()}
-      </div>
-    );
+    if (this.state.ready) {
+      return this.renderReady();
+    }
+    return this.renderUnready();
   }
 
 
@@ -67,9 +65,9 @@ export default class Doc extends React.Component<Props, State> {
 
   renderReady() {
     return (
-      <div dangerouslySetInnerHTML={{
-        __html: this.state.map.getSVG(),
-      }}>
+      <div>
+        <h1>{this.state.map.getTitle()}</h1>
+        {this.state.map.getSVG()}
       </div>
     );
   }
