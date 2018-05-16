@@ -12,10 +12,10 @@ module.exports = {
         exclude: /node_modules/,
         use: "ts-loader",
       },
-      {
-        test: require.resolve("snapsvg/dist/snap.svg.js"),
-        use: "imports-loader?this=>window,fix=>module.exports=0",
-      },
+      // {
+      //   test: require.resolve("snapsvg/dist/snap.svg.js"),
+      //   use: "imports-loader?this=>window,fix=>module.exports=0",
+      // },
     ],
   },
   output: {
@@ -29,8 +29,8 @@ module.exports = {
   ],
   resolve: {
     extensions: [ ".tsx", ".ts", ".js", ".json" ],
-    alias: {
-      snapsvg: "snapsvg/dist/snap.svg.js",
-    },
+    // alias: {
+    //   snapsvg: "snapsvg/dist/snap.svg.js",
+    // },
   },
 };

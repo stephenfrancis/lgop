@@ -31,7 +31,7 @@ export default class Doc extends React.Component<Props, State> {
 
   private load(props: Props) {
     const that = this;
-    Log.debug(`Map.load() getting: props.doc_id`);
+    Log.debug(`Map.load() getting: props.doc_id: ${props.doc_id}`);
     props.store.getDoc(props.doc_id)
       .then(function (doc: { id: string, content: string }): void {
         that.setState({

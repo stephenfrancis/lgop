@@ -1,7 +1,6 @@
 
 import * as React from "react";
 import RootLog from "loglevel";
-// import Snap from "snapsvg";
 
 const Log = RootLog.getLogger("lgop.Map");
 
