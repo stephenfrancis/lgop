@@ -12,7 +12,10 @@ export default class Map {
 
   constructor(id: string, content: string) {
     this.id = id;
+    Location.clear();
+    Cell.clear();
     this.parseContent(content);
+    Cell.report();
   }
 
 
@@ -106,17 +109,13 @@ export class Location {
   // private x: number;
   // private y: number;
   private static locations: any = {};
-  private static min_row: number = 0;
-  private static min_col: number = 0;
-  // private static min_z: number = 0;
-  // private static max_z: number = 0;
-  private static col_z_extrema = [];
-  private static row_z_extrema = [];
-  // private static col_width: Array<number> = [];
-  // private static row_height: Array<number> = [];
+  // private static min_row: number = 0;
+  // private static min_col: number = 0;
+  // private static col_z_extrema = [];
+  // private static row_z_extrema = [];
   private static direction_codes: any = {
     "N" : { col:  0, row: -1, z:  0, fx:  56, fy:  0, tx:  56, ty: 24, ang:   0, },
-    "NE": { col:  0, row: -1, z:  0, fx: 120, fy:  0, tx:   0, ty: 24, ang:  45, },
+    "NE": { col:  1, row: -1, z:  0, fx: 120, fy:  0, tx:   0, ty: 24, ang:  45, },
     "E" : { col:  1, row:  0, z:  0, fx: 120, fy:  8, tx:   0, ty:  8, ang:  90, },
     "SE": { col:  1, row:  1, z:  0, fx: 120, fy: 24, tx:   0, ty:  0, ang: 135, },
     "S" : { col:  0, row:  1, z:  0, fx:  64, fy: 24, tx:  64, ty:  0, ang: 180, },
@@ -190,10 +189,16 @@ export class Location {
   }
 
 
+  public static clear(): void {
+    Location.locations = {};
+  }
+
+
   public getBoxSVG() {
     this.checkPositioned();
     const key = this.getId() + "_box";
     const pos = this.getPosition();
+    Log.debug(`positioning: ${this.name} at row ${this.row}, col ${this.col}, z ${this.z} => ${pos.x}, ${pos.y}`);
     return (
       <rect x={pos.x} y={pos.y} width={this.width} height={this.height} key={key} />
     );
@@ -231,6 +236,8 @@ export class Location {
 
 
   public getPosition(): { x: number, y: number } {
+    return Cell.getCell(this.row, this.col).getPosition(this.z);
+/*
     const min_z = Math.min(Location.col_z_extrema[this.col].min, Location.row_z_extrema[this.row].min);
     const max_z = Math.max(Location.col_z_extrema[this.col].max, Location.row_z_extrema[this.row].max);
     const out = {
@@ -245,6 +252,7 @@ export class Location {
     }
     Log.debug(`getPosition() for ${this.getId()} ${this.row}, ${this.col}, ${this.z}, ${Location.min_row}, ${Location.min_col}, ${min_z}, ${max_z} returns ${out.x}, ${out.y}`);
     return out;
+*/
   }
 
   public getTextSVG() {
@@ -274,17 +282,14 @@ export class Location {
     this.row = row;
     this.z = z;
     this.positioned = true;
-    Location.setRowColumnZ(col, row, z);
+    Cell.getCell(row, col).addLocation(this, z);
+    // Location.setRowColumnZ(col, row, z);
   }
 
-
+/*
   private static setRowColumnZ(col: number, row: number, z: number) {
     this.min_col = Math.min(this.min_col, col);
     this.min_row = Math.min(this.min_row, row);
-    // this.col_width[col] = this.col_width[col] || 200;
-    // this.row_height[row] = this.row_height[row] || 100;
-    // this.min_z = Math.min(this.min_z, z);
-    // this.max_z = Math.max(this.max_z, z);
     this.col_z_extrema[col] = this.col_z_extrema[col] || { min: 0, max: 0, };
     this.col_z_extrema[col].min = Math.min(this.col_z_extrema[col].min, z);
     this.col_z_extrema[col].max = Math.max(this.col_z_extrema[col].max, z);
@@ -292,6 +297,148 @@ export class Location {
     this.row_z_extrema[row] = this.row_z_extrema[row] || { min: 0, max: 0, };
     this.row_z_extrema[row].min = Math.min(this.row_z_extrema[row].min, z);
     this.row_z_extrema[row].max = Math.max(this.row_z_extrema[row].max, z);
+  }
+*/
+
+}
+
+
+
+export class Cell {
+  private row: number;
+  private col: number;
+  private min_z: number;
+  private max_z: number;
+  private locations: Array<Location>;
+  private static cells: Array<Array<Cell>> = [];
+  private static min_row: number = 0;
+  private static max_row: number = 0;
+  private static min_col: number = 0;
+  private static max_col: number = 0;
+
+  constructor(row: number, col: number) {
+    if (Cell.cells[row][col]) {
+      throw new Error(`cell ${row}.${col} already exists`);
+    }
+    this.row = row;
+    this.col = col;
+    this.locations = [];
+    this.min_z = 0;
+    this.max_z = 0;
+  }
+
+
+  public addLocation(location: Location, z: number) {
+    if (this.locations[z]) {
+      throw new Error(`there is already a box at z-index ${z}`);
+    }
+    this.locations[z] = location;
+    this.min_z = Math.min(this.min_z, z);
+    this.max_z = Math.max(this.max_z, z);
+  }
+
+
+  public static clear(): void {
+    Cell.cells = [];
+    Cell.min_col = 0;
+    Cell.max_col = 0;
+    Cell.min_row = 0;
+    Cell.max_row = 0;
+  }
+
+
+  public static getCell(row: number, col: number): Cell {
+    if (!Cell.cells[row]) {
+      Cell.cells[row] = [];
+    }
+    if (!Cell.cells[row][col]) {
+      Cell.cells[row][col] = new Cell(row, col);
+    }
+    Cell.min_row = Math.min(Cell.min_row, row);
+    Cell.max_row = Math.max(Cell.max_row, row);
+    Cell.min_col = Math.min(Cell.min_col, col);
+    Cell.max_col = Math.max(Cell.max_col, col);
+    return Cell.cells[row][col];
+  }
+
+
+  public static getMaxZInCol(col: number): number {
+    let max_z: number = 0;
+    for (let row: number = Cell.min_row; row <= Cell.max_row; row += 1) {
+      if (Cell.cells[row][col]) {
+        max_z = Math.max(max_z, Cell.cells[row][col].max_z);
+      }
+    }
+    return max_z;
+  }
+
+
+  public static getMaxZInRow(row: number): number {
+    let max_z: number = 0;
+    for (let col: number = Cell.min_col; col <= Cell.max_col; col += 1) {
+      if (Cell.cells[row][col]) {
+        max_z = Math.max(max_z, Cell.cells[row][col].max_z);
+      }
+    }
+    return max_z;
+  }
+
+
+  public static getMinZInCol(col: number): number {
+    let min_z: number = 0;
+    for (let row: number = Cell.min_row; row <= Cell.max_row; row += 1) {
+      if (Cell.cells[row][col]) {
+        min_z = Math.min(min_z, Cell.cells[row][col].min_z);
+      }
+    }
+    return min_z;
+  }
+
+
+  public static getMinZInRow(row: number): number {
+    let min_z: number = 0;
+    for (let col: number = Cell.min_col; col <= Cell.max_col; col += 1) {
+      if (Cell.cells[row][col]) {
+        min_z = Math.min(min_z, Cell.cells[row][col].min_z);
+      }
+    }
+    return min_z;
+  }
+
+
+  public getPosition(z?: number): { x: number, y: number } {
+    const out = {
+      x: 20 + (100 * ((z || 0) - Cell.getMinZInCol(this.col))),
+      y: 20 + ( 40 * (Cell.getMaxZInRow(this.row) - (z || 0))),
+    }
+    for (let i = Cell.min_col; i < this.col; i += 1) {
+      out.x += (Cell.getMaxZInCol(i) - Cell.getMinZInCol(i)) * 100 + 150;
+    }
+    for (let i = Cell.min_row; i < this.row; i += 1) {
+      out.y += (Cell.getMaxZInRow(i) - Cell.getMinZInRow(i)) *  40 +  60;
+    }
+    return out;
+  }
+
+
+  public static report(): void {
+
+    for (let row: number = Cell.min_row; row <= Cell.max_row; row += 1) {
+      for (let col: number = Cell.min_col; col <= Cell.max_col; col += 1) {
+        let cell = Cell.cells[row][col];
+        if (cell) {
+          Log.debug(`cell ${row}, ${col}: ${cell.min_z} - ${cell.max_z}`);
+        }
+      }
+    }
+
+    for (let i = Cell.min_row; i <= Cell.max_row; i += 1) {
+      Log.debug(`row ${i} min: ${Cell.getMinZInRow(i)} max: ${Cell.getMaxZInRow(i)}`);
+    }
+    for (let i = Cell.min_col; i <= Cell.max_col; i += 1) {
+      Log.debug(`col ${i} min: ${Cell.getMinZInCol(i)} max: ${Cell.getMaxZInCol(i)}`);
+    }
+
   }
 
 }
