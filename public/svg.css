@@ -14,3 +14,8 @@ text {
   font-family: Arial;
   font-size: 12px;
 }
+
+a > rect {
+  fill: #ccc;
+  cursor: pointer;
+}

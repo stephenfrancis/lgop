@@ -46,6 +46,10 @@ export default class Map {
       parse_state.location.addDirection(match[1], match[2]);
       return true;
     }
+    match = line.match(/^ {2}\* C:\s*\[(.*?)\]\((.*)\)$/);
+    if (match && match.length > 2 && parse_state.location) {
+      parse_state.location.addLink(match[2], match[1]);
+    }
     return false;
   }
 
@@ -103,6 +107,8 @@ export class Location {
   private positioned: boolean = false;
   private height: number = 24;
   private width: number = 120;
+  private link_url: string;
+  private link_text: string;
   private row: number;
   private col: number;
   private z: number;
@@ -142,6 +148,12 @@ export class Location {
     }
     this.directions[direction] = Location.getLocation(other_location);
     this.positionRelativeIfNecessary(direction);
+  }
+
+
+  public addLink(link_url: string, link_text?: string): void {
+    this.link_url = link_url;
+    this.link_text = link_text;
   }
 
 
@@ -195,6 +207,19 @@ export class Location {
 
 
   public getBoxSVG() {
+    if (this.link_url) {
+      const key = this.getId() + "_a";
+      return (
+        <a href={this.link_url} key={key}>
+          {this.getBoxSVGInternal()}
+        </a>
+      );
+    }
+    return this.getBoxSVGInternal();
+  }
+
+
+  public getBoxSVGInternal() {
     this.checkPositioned();
     const key = this.getId() + "_box";
     const pos = this.getPosition();
@@ -280,25 +305,9 @@ export class Location {
   public setPosition(col: number, row: number, z: number) {
     this.col = col;
     this.row = row;
-    this.z = z;
     this.positioned = true;
-    Cell.getCell(row, col).addLocation(this, z);
-    // Location.setRowColumnZ(col, row, z);
+    this.z = Cell.getCell(row, col).addLocation(this, z);
   }
-
-/*
-  private static setRowColumnZ(col: number, row: number, z: number) {
-    this.min_col = Math.min(this.min_col, col);
-    this.min_row = Math.min(this.min_row, row);
-    this.col_z_extrema[col] = this.col_z_extrema[col] || { min: 0, max: 0, };
-    this.col_z_extrema[col].min = Math.min(this.col_z_extrema[col].min, z);
-    this.col_z_extrema[col].max = Math.max(this.col_z_extrema[col].max, z);
-
-    this.row_z_extrema[row] = this.row_z_extrema[row] || { min: 0, max: 0, };
-    this.row_z_extrema[row].min = Math.min(this.row_z_extrema[row].min, z);
-    this.row_z_extrema[row].max = Math.max(this.row_z_extrema[row].max, z);
-  }
-*/
 
 }
 
@@ -329,12 +338,11 @@ export class Cell {
 
 
   public addLocation(location: Location, z: number) {
-    if (this.locations[z]) {
-      throw new Error(`there is already a box at z-index ${z}`);
-    }
+    z = this.findBestZ(z);
     this.locations[z] = location;
     this.min_z = Math.min(this.min_z, z);
     this.max_z = Math.max(this.max_z, z);
+    return z;
   }
 
 
@@ -344,6 +352,14 @@ export class Cell {
     Cell.max_col = 0;
     Cell.min_row = 0;
     Cell.max_row = 0;
+  }
+
+
+  public findBestZ(z: number) {
+    while (this.locations[z]) {
+      z += 1;
+    }
+    return z;
   }
 
 
