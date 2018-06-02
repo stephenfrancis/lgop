@@ -1,8 +1,22 @@
 
 import * as React from "react";
 import RootLog from "loglevel";
+import Draw from "./Draw";
 
 const Log = RootLog.getLogger("lgop.Map");
+
+const direction_codes: any = {
+  "N" : { col:  0, row: -1, z:  0, fx:  56, fy:  0, tx:  56, ty: 24, ang:   0, },
+  "NE": { col:  1, row: -1, z:  0, fx: 120, fy:  0, tx:   0, ty: 24, ang:  45, },
+  "E" : { col:  1, row:  0, z:  0, fx: 120, fy:  8, tx:   0, ty:  8, ang:  90, },
+  "SE": { col:  1, row:  1, z:  0, fx: 120, fy: 24, tx:   0, ty:  0, ang: 135, },
+  "S" : { col:  0, row:  1, z:  0, fx:  64, fy: 24, tx:  64, ty:  0, ang: 180, },
+  "SW": { col: -1, row:  1, z:  0, fx:   0, fy: 24, tx: 120, ty:  0, ang: 225, },
+  "W" : { col: -1, row:  0, z:  0, fx:   0, fy: 16, tx: 120, ty: 16, ang: 270, },
+  "NW": { col: -1, row: -1, z:  0, fx:   0, fy:  0, tx: 120, ty: 24, ang: 315, },
+  "U" : { col:  0, row:  0, z:  1, fx:  96, fy:  0, tx:  16, ty: 24, ang:  45, },
+  "D" : { col:  0, row:  0, z: -1, fx:  24, fy: 24, tx: 104, ty:  0, ang: 225, },
+};
 
 
 export default class Map {
@@ -24,12 +38,12 @@ export default class Map {
   }
 
 
-  public getSVG() {
-    const children = [];
-    this.first_location.appendSVG(children);
+  public getSVG(): JSX.Element {
+    const draw: Draw = new Draw();
+    this.first_location.draw(draw);
     return (
       <svg height="800" version="1.1" width="1200" xmlns="http://www.w3.org/2000/svg">
-        {children}
+        {draw.getElements()}
       </svg>
     );
   }
@@ -119,18 +133,7 @@ export class Location {
   // private static min_col: number = 0;
   // private static col_z_extrema = [];
   // private static row_z_extrema = [];
-  private static direction_codes: any = {
-    "N" : { col:  0, row: -1, z:  0, fx:  56, fy:  0, tx:  56, ty: 24, ang:   0, },
-    "NE": { col:  1, row: -1, z:  0, fx: 120, fy:  0, tx:   0, ty: 24, ang:  45, },
-    "E" : { col:  1, row:  0, z:  0, fx: 120, fy:  8, tx:   0, ty:  8, ang:  90, },
-    "SE": { col:  1, row:  1, z:  0, fx: 120, fy: 24, tx:   0, ty:  0, ang: 135, },
-    "S" : { col:  0, row:  1, z:  0, fx:  64, fy: 24, tx:  64, ty:  0, ang: 180, },
-    "SW": { col: -1, row:  1, z:  0, fx:   0, fy: 24, tx: 120, ty:  0, ang: 225, },
-    "W" : { col: -1, row:  0, z:  0, fx:   0, fy: 16, tx: 120, ty: 16, ang: 270, },
-    "NW": { col: -1, row: -1, z:  0, fx:   0, fy:  0, tx: 120, ty: 24, ang: 315, },
-    "U" : { col:  0, row:  0, z:  1, fx:  96, fy:  0, tx:  16, ty: 24, ang:  45, },
-    "D" : { col:  0, row:  0, z: -1, fx:  24, fy: 24, tx: 104, ty:  0, ang: 225, },
-  };
+
 
   constructor(name: string) {
     this.name = name;
@@ -139,8 +142,8 @@ export class Location {
   }
 
 
-  public addDirection(direction: string, other_location: string) {
-    if (!Location.direction_codes[direction]) {
+  public addDirection(direction: string, other_location: string): void {
+    if (!direction_codes[direction]) {
       throw new Error(`invalid direction code: ${direction}`);
     }
     if (this.directions[direction]) {
@@ -156,12 +159,12 @@ export class Location {
     this.link_text = link_text;
   }
 
-
-  public appendLineSVG(elements, dir: string, other_location: Location): void {
+/*
+  public appendLineSVG(elements: Array<JSX.Element>, dir: string, other_location: Location): void {
     const this_pos = this.getPosition();
     const other_pos = other_location.getPosition();
     const key = this.getId() + "_" + other_location.getId();
-    const delta = Location.direction_codes[dir];
+    const delta = direction_codes[dir];
     const x2 = other_pos.x + delta.tx;
     const y2 = other_pos.y + delta.ty;
     elements.push(
@@ -177,24 +180,29 @@ export class Location {
       <polygon key={key + "_arrowhead"} points={points} transform={transform} />
     );
   }
+*/
 
-
-  public appendSVG(elements, done_locations?): void {
+  public draw(draw: Draw, done_locations?): void {
     done_locations = done_locations || [];
     if (done_locations.indexOf(this) > -1) {
       return;
     }
-    elements.push(this.getBoxSVG());
-    elements.push(this.getTextSVG());
+    this.drawBox(draw);
+    this.drawText(draw);
     done_locations.push(this);
+    let from: any = this.getPosition();
     Object.keys(this.directions).forEach(dir => {
-      this.directions[dir].appendSVG(elements, done_locations);
-      this.appendLineSVG(elements, dir, this.directions[dir]);
+      from.dir = dir;
+      this.directions[dir].draw(draw, done_locations);
+      // this.appendLineSVG(elements, dir, this.directions[dir]);
+      let to: any = this.directions[dir].getPosition();
+      to.dir = "auto";
+      draw.arrow(from, to);
     });
   }
 
 
-  public checkPositioned() {
+  public checkPositioned(): void {
     if (!this.positioned) {
       throw new Error(`location not positioned: ${this.getId()}`);
     }
@@ -206,32 +214,15 @@ export class Location {
   }
 
 
-  public getBoxSVG() {
-    if (this.link_url) {
-      const key = this.getId() + "_a";
-      return (
-        <a href={this.link_url} key={key}>
-          {this.getBoxSVGInternal()}
-        </a>
-      );
-    }
-    return this.getBoxSVGInternal();
-  }
-
-
-  public getBoxSVGInternal() {
-    this.checkPositioned();
-    const key = this.getId() + "_box";
+  public drawBox(draw: Draw): void {
     const pos = this.getPosition();
     Log.debug(`positioning: ${this.name} at row ${this.row}, col ${this.col}, z ${this.z} => ${pos.x}, ${pos.y}`);
-    return (
-      <rect x={pos.x} y={pos.y} width={this.width} height={this.height} key={key} />
-    );
+    draw.box(pos, this.width, this.height, this.link_url);
   }
 
 
   public getDirection(direction: string): Location {
-    if (!Location.direction_codes[direction]) {
+    if (!direction_codes[direction]) {
       throw new Error(`invalid direction code: ${direction}`);
     }
     if (!this.directions[direction]) {
@@ -246,12 +237,12 @@ export class Location {
   }
 
 
-  public getId() {
+  public getId(): string {
     return this.name.replace(/\s+/g, "_").toLowerCase();
   }
 
 
-  public static getLocation(name: string) {
+  public static getLocation(name: string): Location {
     name = name.trim();
     if (!Location.locations[name]) {
       Location.locations[name] = new Location(name);
@@ -280,21 +271,18 @@ export class Location {
 */
   }
 
-  public getTextSVG() {
+  public drawText(draw: Draw): void {
     this.checkPositioned();
     const pos = this.getPosition();
-    const key = this.getId() + "_text";
-    return (
-      <text x={pos.x + 4} y={pos.y + 16} key={key}>{this.name}</text>
-    );
+    draw.text(pos, this.name);
   }
 
 
-  private positionRelativeIfNecessary(direction: string) {
+  private positionRelativeIfNecessary(direction: string): void {
     this.checkPositioned();
     const other_location: Location = this.directions[direction];
     if (!other_location.positioned) {
-      const delta = Location.direction_codes[direction];
+      const delta = direction_codes[direction];
       if (delta) {
         other_location.setPosition(this.col + delta.col, this.row + delta.row, this.z + delta.z);
       }
@@ -302,7 +290,7 @@ export class Location {
   }
 
 
-  public setPosition(col: number, row: number, z: number) {
+  public setPosition(col: number, row: number, z: number): void {
     this.col = col;
     this.row = row;
     this.positioned = true;
@@ -337,7 +325,7 @@ export class Cell {
   }
 
 
-  public addLocation(location: Location, z: number) {
+  public addLocation(location: Location, z: number): number {
     z = this.findBestZ(z);
     this.locations[z] = location;
     this.min_z = Math.min(this.min_z, z);
@@ -355,7 +343,7 @@ export class Cell {
   }
 
 
-  public findBestZ(z: number) {
+  public findBestZ(z: number): number {
     while (this.locations[z]) {
       z += 1;
     }

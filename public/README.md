@@ -1,5 +1,5 @@
 
 # Leather Goddesses of Phobos
 
-
-* [Sandusky](sandusky.md)
+* Start
+  * C: [Sandusky](#sandusky.md)
