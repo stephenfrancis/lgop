@@ -131,6 +131,7 @@ export class Location {
       throw new Error(`direction already specified: ${direction}`);
     }
     this.directions[direction] = Location.getLocation(other_location);
+    this.block.addConnector(this.directions[direction].block, dir);
     this.positionRelativeIfNecessary(direction);
   }
 
@@ -153,6 +154,7 @@ export class Location {
     Object.keys(this.directions).forEach(dir => {
       content.push(this.directions[dir].draw(done_locations));
     });
+    content.push(this.block.svgConnectors());
     return (
       <g key={this.elmt_id}>{content}</g>
     );

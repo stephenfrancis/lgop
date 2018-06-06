@@ -6,6 +6,7 @@ export default class Direction {
   private dcol: number;
   private dz: number;
   private static directions: any = {};
+  private static ordered: Array<Direction> = [];
 
   constructor(id: string, ang: number, drow: number, dcol: number, dz?: number) {
     this.id = id;
@@ -14,6 +15,7 @@ export default class Direction {
     this.dcol = dcol;
     this.dz = dz;
     Direction.directions[id] = this;
+    Direction.ordered.push(this);
   }
 
 
@@ -24,6 +26,16 @@ export default class Direction {
 
   public getAngle(): number {
     return this.ang;
+  }
+
+
+  public getAngleCos(): number {
+    return Math.cos(this.ang * Math.PI / 180);
+  }
+
+
+  public getAngleSin(): number {
+    return Math.sin(this.ang * Math.PI / 180);
   }
 
 
@@ -53,7 +65,10 @@ export default class Direction {
 
 
   public static nearest(bearing: number): Direction {
-    return Direction.directions[Math.floor((bearing + 22.5) / 45) % 8];
+    const index: number = Math.floor((bearing + 22.5) / 45) % 8;
+    const dir: Direction = Direction.ordered[index];
+    // console.log(`nearest(${bearing}) => ${index} => ${dir}`);
+    return dir;
   }
 
 };

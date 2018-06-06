@@ -35,6 +35,15 @@ export default class Block {
   }
 
 
+  public getAnchorPoint(dir: Direction): Point {
+    const point: Point = new Point(
+      this.centre.getX() + (this.width * dir.getAngleSin() / 2),
+      this.centre.getY() - (this.height * dir.getAngleCos() / 2)
+    );
+    return point;
+  }
+
+
   public getCentre(): Point {
     return this.centre;
   }
@@ -64,6 +73,18 @@ export default class Block {
   }
 
 
+  public svgConnectors(): JSX.Element {
+    const content: Array<JSX.Element> = [];
+    this.connectors.forEach(connector => {
+      Log.info(`adding svg for connector: ${connector}`)
+      content.push(connector.svg());
+    });
+    return (
+      <g key={this.elmt_id}>{content}</g>
+    );
+  }
+
+
   private svgInternal(): JSX.Element {
     if (!this.centre) {
       throw new Error(`block centre not defined`);
@@ -83,6 +104,11 @@ export default class Block {
       <text x={this.centre.getX() - (this.width / 2) + 4} y={this.centre.getY() - (this.height / 2) + 16}
         key={"text_" + this.elmt_id}>{this.name}</text>
     );
+  }
+
+
+  public toString(): string {
+    return `[[${this.name}]] at ${this.centre}`;
   }
 
 }
