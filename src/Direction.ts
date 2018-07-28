@@ -5,7 +5,7 @@ export default class Direction {
   private drow: number;
   private dcol: number;
   private dz: number;
-  private static directions: any = {};
+  private static directions: { [index: string]: Direction, } = {};
   private static ordered: Array<Direction> = [];
 
   constructor(id: string, ang: number, drow: number, dcol: number, dz?: number) {
@@ -20,7 +20,7 @@ export default class Direction {
 
 
   public static getAll(): Array<Direction> {
-    return Direction.directions;
+    return Direction.ordered;
   }
 
 
@@ -39,7 +39,7 @@ export default class Direction {
   }
 
 
-  public static get(id: string) {
+  public static get(id: string): Direction {
     return Direction.directions[id];
   }
 

@@ -107,12 +107,12 @@ export default class Map {
 export class Location {
   private block: Block;
   private col: number;
-  private directions: any;
+  private directions: { [index: string]: Location, };
   private elmt_id: string;
   private positioned: boolean = false;
   private row: number;
   private z: number;
-  private static locations: any = {};
+  private static locations: { [index: string]: Location, } = {};
 
 
   constructor(name: string) {
@@ -181,7 +181,7 @@ export class Location {
   }
 
 
-  public getDirections(): any {
+  public getDirections(): { [index: string]: Location, } {
     return this.directions;
   }
 
