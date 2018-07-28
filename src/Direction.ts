@@ -44,6 +44,28 @@ export default class Direction {
   }
 
 
+  public getAnchorPointFractionX(): number {
+    if (this.id === "U") {
+      return 0.1;
+    }
+    if (this.id === "D") {
+      return -0.1;
+    }
+    return this.getDeltaCol() / 2;
+  }
+
+
+  public getAnchorPointFractionY(): number {
+    if (this.id === "U") {
+      return -0.5;
+    }
+    if (this.id === "D") {
+      return 0.5;
+    }
+    return this.getDeltaRow() / 2;
+  }
+
+
   public getDeltaCol(): number {
     return this.dcol;
   }

@@ -37,10 +37,8 @@ export default class Block {
 
   public getAnchorPoint(dir: Direction): Point {
     const point: Point = new Point(
-      this.centre.getX() + (this.width * dir.getDeltaCol() / 2),
-      this.centre.getY() + (this.height * dir.getDeltaRow() / 2)
-      // this.centre.getX() + (this.width * dir.getAngleSin() / 2),
-      // this.centre.getY() - (this.height * dir.getAngleCos() / 2)
+      this.centre.getX() + (this.width * dir.getAnchorPointFractionX()),
+      this.centre.getY() + (this.height * dir.getAnchorPointFractionY())
     );
     return point;
   }
