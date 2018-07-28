@@ -109,7 +109,7 @@ export default class Connector {
 
 
   public toString(): string {
-    return `from ${this.from} to ${this.to}`;
+    return `from ${this.from} ${this.from_dir} to ${this.to} ${this.to_dir}`;
   }
 
 }
