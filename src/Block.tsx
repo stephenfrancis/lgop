@@ -29,7 +29,7 @@ export default class Block {
 
 
   public addConnector(to: Block, from_dir?: Direction, to_dir?: Direction): Connector {
-    const conn: Connector = new Connector(this, to);
+    const conn: Connector = new Connector(this, to, from_dir, to_dir);
     this.connectors.push(conn);
     return conn;
   }
@@ -37,8 +37,10 @@ export default class Block {
 
   public getAnchorPoint(dir: Direction): Point {
     const point: Point = new Point(
-      this.centre.getX() + (this.width * dir.getAngleSin() / 2),
-      this.centre.getY() - (this.height * dir.getAngleCos() / 2)
+      this.centre.getX() + (this.width * dir.getDeltaCol() / 2),
+      this.centre.getY() + (this.height * dir.getDeltaRow() / 2)
+      // this.centre.getX() + (this.width * dir.getAngleSin() / 2),
+      // this.centre.getY() - (this.height * dir.getAngleCos() / 2)
     );
     return point;
   }
