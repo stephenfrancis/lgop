@@ -44,6 +44,7 @@ export default class MapLoader {
     match = line.match(/^ {2}\* C:\s*\[(.*?)\]\((.*)\)$/);
     if (match && match.length > 2 && parse_state.block) {
       parse_state.block.setLink(match[2]); // TODO what about match[1]?
+      return true;
     }
     return false;
   }

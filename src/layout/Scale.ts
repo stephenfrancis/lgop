@@ -43,7 +43,7 @@ export default class Scale {
     if (y > this.max_row) {
       this.max_row = y;
     }
-    console.log(`Scale.addBlock() adding ${block} to Col ${x} and Row ${y}`);
+    // console.log(`Scale.addBlock() adding ${block} to Col ${x} and Row ${y}`);
     this.getRow(y).add(block);
     this.getColumn(x).add(block);
   }
@@ -123,7 +123,7 @@ export class Column {
   public rescale(new_x: number): number {
     const old_x: number = this.x;
     this.x = new_x + (this.max_width / 2);
-    console.log(`Column.rescale() ${old_x} to ${this.x}`);
+    // console.log(`Column.rescale() ${old_x} to ${this.x}`);
     this.blocks.forEach((block: Block) => {
       block.getCentre().setX(this.x);
     });
@@ -161,7 +161,7 @@ export class Row {
   public rescale(new_y: number): number {
     const old_y: number = this.y;
     this.y = new_y + (this.max_height / 2);
-    console.log(`Row.rescale() ${old_y} to ${this.y}`);
+    // console.log(`Row.rescale() ${old_y} to ${this.y}`);
     this.blocks.forEach((block: Block) => {
       block.getCentre().setY(this.y);
     });
