@@ -93,6 +93,11 @@ export default class Direction {
     return dir;
   }
 
+
+  public toString(): string {
+    return this.id;
+  }
+
 };
 
 

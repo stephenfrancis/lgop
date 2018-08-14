@@ -1,8 +1,5 @@
 
-import RootLog from "loglevel";
 import Direction from "./Direction";
-
-const Log = RootLog.getLogger("lgop.Point");
 
 
 export default class Point {
@@ -14,6 +11,7 @@ export default class Point {
     this.y = y;
   }
 
+
   public bearingOf(to: Point): number {
     const delta_x = to.x - this.x;
     const delta_y = to.y - this.y;
@@ -21,7 +19,7 @@ export default class Point {
     if (out < 0) {
       out += 360;
     }
-    Log.info(`bearingOf() dx: ${delta_x}, dy: ${delta_y} => ${out}`);
+    console.log(`bearingOf() dx: ${delta_x}, dy: ${delta_y} => ${out}`);
     return out;
   }
 
@@ -43,6 +41,12 @@ export default class Point {
 
   public getY(): number {
     return this.y;
+  }
+
+
+  public setTo(point: Point): void {
+    this.x = point.getX();
+    this.y = point.getY();
   }
 
 

@@ -1,5 +1,5 @@
 
-import RootLog from "loglevel";
+import RootLog from "../../lapis/node_modules/@types/loglevel/index";
 import Location from "./Location";
 import Point from "./Point";
 

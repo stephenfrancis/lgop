@@ -1,7 +1,7 @@
 
 import * as React from "react";
-import RootLog from "loglevel";
-import AjaxStore from "lapis/store/AjaxStore";
+import RootLog from "../../lapis/node_modules/@types/loglevel/index";
+import AjaxStore from "../../lapis/store/AjaxStore";
 import Map from "./Map";
 
 

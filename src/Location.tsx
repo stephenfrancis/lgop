@@ -1,8 +1,8 @@
 
 import * as React from "react";
-import RootLog from "loglevel";
+import RootLog from "../../lapis/node_modules/@types/loglevel/index";
 import * as Uuidv4 from "uuid/v4";
-import Block from "./Block";
+import Block from "./core/Block";
 import Cell from "./Cell";
 import Direction from "./Direction";
 import Point from "./Point";

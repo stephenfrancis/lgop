@@ -1,9 +1,9 @@
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import AjaxStore from "lapis/store/AjaxStore";
-import RootLog from "loglevel";
-import _ from "underscore";
+import AjaxStore from "../../lapis/store/AjaxStore";
+import RootLog from "../../lapis/node_modules/@types/loglevel/index";
+import _ from "../../lapis/node_modules/@types/underscore/index";
 import Url from "url";
 import Doc from "./Doc";
 
