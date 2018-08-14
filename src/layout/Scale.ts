@@ -4,6 +4,12 @@ import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
 import Point from "../core/Point";
 
+const margin_left: number = 5;
+const margin_top: number = 5;
+const inter_block_padding_x: number = 10;
+const inter_block_padding_y: number = 10;
+
+
 export default class Scale {
   private columns: Column[];
   private rows: Row[];
@@ -37,6 +43,7 @@ export default class Scale {
     if (y > this.max_row) {
       this.max_row = y;
     }
+    console.log(`Scale.addBlock() adding ${block} to Col ${x} and Row ${y}`);
     this.getRow(y).add(block);
     this.getColumn(x).add(block);
   }
@@ -68,20 +75,20 @@ export default class Scale {
 
 
   private rescaleColumns(): void {
-    let new_x: number = 0;
-    for (let i = this.min_col; i < this.max_col; i += 1) {
+    let new_x: number = margin_left;
+    for (let i = this.min_col; i <= this.max_col; i += 1) {
       if (this.columns[i]) {
-        new_x += this.columns[i].rescale(new_x);
+        new_x += this.columns[i].rescale(new_x) + inter_block_padding_x;
       }
     }
   }
 
 
   private rescaleRows(): void {
-    let new_y: number = 0;
-    for (let i = this.min_row; i < this.max_row; i += 1) {
+    let new_y: number = margin_top;
+    for (let i = this.min_row; i <= this.max_row; i += 1) {
       if (this.rows[i]) {
-        new_y += this.rows[i].rescale(new_y);
+        new_y += this.rows[i].rescale(new_y) + inter_block_padding_y;
       }
     }
   }
@@ -114,12 +121,13 @@ export class Column {
 
 
   public rescale(new_x: number): number {
+    const old_x: number = this.x;
     this.x = new_x + (this.max_width / 2);
+    console.log(`Column.rescale() ${old_x} to ${this.x}`);
     this.blocks.forEach((block: Block) => {
       block.getCentre().setX(this.x);
     });
-    new_x += this.max_width;
-    return new_x;
+    return this.max_width;
   }
 
 }
@@ -151,12 +159,13 @@ export class Row {
 
 
   public rescale(new_y: number): number {
+    const old_y: number = this.y;
     this.y = new_y + (this.max_height / 2);
+    console.log(`Row.rescale() ${old_y} to ${this.y}`);
     this.blocks.forEach((block: Block) => {
       block.getCentre().setY(this.y);
     });
-    new_y += this.max_height;
-    return new_y;
+    return this.max_height;
   }
 
 }

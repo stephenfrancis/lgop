@@ -1,5 +1,4 @@
 
-import Fs from "fs";
 import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 import Direction from "../core/Direction";
@@ -52,39 +51,34 @@ export default class MapLoader {
 
   private isTitle(line: string, parse_state: any): boolean {
     const match = line.match(/^# (.*)/);
-    // if (match) {
-    //   this.title = match[1];
-    // }
+    if (match) {
+      this.diagram.setTitle(match[1]);
+    }
     return !!match;
   }
 
 
-  // const lines = content.split(/\r\n|\n/);
-  public parseContent(lines: string[]) {
-    const that = this;
+  public parseContent(content: string) {
+    this.parseLines(content.split(/\r\n|\n/));
+  }
+
+
+  public parseLines(lines: string[]) {
     const parse_state: {
       inside_room: boolean,
       block?: Block,
     } = {
       inside_room: false,
     }
-    lines.forEach(function (line) {
+    lines.forEach((line) => {
       let done = false;
-      done = done || that.isBlock(line, parse_state);
-      done = done || that.isConnector(line, parse_state);
-      done = done || that.isTitle(line, parse_state);
+      done = done || this.isBlock(line, parse_state);
+      done = done || this.isConnector(line, parse_state);
+      done = done || this.isTitle(line, parse_state);
       if (!done) {
-        that.reportError("unused line: " + line);
+        this.reportError("unused line: " + line);
       }
     });
-  }
-
-
-  public readFile(filename: string) {
-    const data = Fs.readFileSync(filename, {
-      encoding: "UTF-8",
-    });
-    this.parseContent(data.split(/\r\n|\n/));
   }
 
 

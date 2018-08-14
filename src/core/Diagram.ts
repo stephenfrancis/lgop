@@ -10,6 +10,7 @@ export enum State {
 export default class Diagram {
   private blocks: { [index: string]: Block };
   private state: State;
+  private title: string;
 
   constructor() {
     this.blocks = {};
@@ -55,6 +56,11 @@ export default class Diagram {
   }
 
 
+  public getTitle(): string {
+    return this.title;
+  }
+
+
   public output(): string {
     let out = "";
     this.forEachBlock((block) => {
@@ -69,6 +75,11 @@ export default class Diagram {
       throw new Error(`removeBlock() can only be used when in AddingData state`);
     }
     delete this.blocks[name];
+  }
+
+
+  public setTitle(title: string): void {
+    this.title = title;
   }
 
 }

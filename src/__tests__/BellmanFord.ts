@@ -1,10 +1,10 @@
 
 
-import LayoutBellmanFord from "../layout/BellmanFord";
+import BellmanFord from "../layout/BellmanFord";
 
 
 test("basic", () => {
-  const bf = new LayoutBellmanFord();
+  const bf = new BellmanFord();
   bf.addBlock("Author");
   bf.addBlock("Paper");
   bf.addBlock("Reviewer");

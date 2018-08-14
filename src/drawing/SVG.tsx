@@ -9,17 +9,14 @@ import Point from "../core/Point";
 
 
 export default class SVG {
-  private diagram: Diagram;
 
-  constructor(diagram: Diagram) {
-    this.diagram = diagram;
-  }
+  constructor() {}
 
 
-
-  private drawBlock(block: Block): JSX.Element {
+  public drawBlock(block: Block): JSX.Element {
     const elmt_id = Uuidv4();
     const link_url = block.getLink();
+    console.log(`SVG.drawBlock ${block}`);
     if (link_url) {
       return (
         <a href={link_url} key={"anchor_" + elmt_id}>
@@ -39,19 +36,32 @@ export default class SVG {
 
 
   public drawBlockConnectors(block: Block): JSX.Element {
-    const content: Array<JSX.Element> = [];
+    const children: Array<JSX.Element> = [];
     const elmt_id = Uuidv4();
     block.getConnectors().forEach(connector => {
       console.log(`adding svg for connector: ${connector}`)
-      content.push(this.drawConnector(connector));
+      children.push(this.drawConnector(connector));
     });
     return (
-      <g key={elmt_id}>{content}</g>
+      <g key={elmt_id}>{children}</g>
     );
   }
 
 
-  private drawRectangle(centre: Point, height: number, width: number): JSX.Element {
+  public drawDiagram(diagram: Diagram): JSX.Element {
+    const children: JSX.Element[] = [];
+    diagram.forEachBlock((block) => {
+      children.push(this.drawBlock(block));
+    });
+    return (
+      <svg height="800" version="1.1" width="1200" xmlns="http://www.w3.org/2000/svg">
+        {children}
+      </svg>
+    );
+  }
+
+
+  public drawRectangle(centre: Point, height: number, width: number): JSX.Element {
     if (!centre) {
       throw new Error(`block centre not defined`);
     }
@@ -135,7 +145,5 @@ export default class SVG {
       <polygon key={key} points={points_str} transform={transform} />
     );
   }
-
-
 
 }

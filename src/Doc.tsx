@@ -1,11 +1,14 @@
 
 import * as React from "react";
-import RootLog from "../../lapis/node_modules/@types/loglevel/index";
 import AjaxStore from "../../lapis/store/AjaxStore";
-import Map from "./Map";
+import Diagram from "./core/Diagram";
+import MapLoader from "./loaders/MapLoader";
+import BellmanFord from "./layout/BellmanFord";
+import Scale from "./layout/Scale";
+import SVG from "./drawing/SVG";
 
 
-const Log = RootLog.getLogger("lgop.Doc");
+// const Log = RootLog.getLogger("lgop.Doc");
 
 
 interface Props {
@@ -15,28 +18,38 @@ interface Props {
 
 interface State {
   ready: boolean;
-  map: Map;
+  diagram: Diagram;
 }
 
 export default class Doc extends React.Component<Props, State> {
+  private svg: SVG;
 
   constructor(props) {
     super(props);
     this.state = {
       ready: false,
     } as State;
+    this.svg = new SVG();
     this.load(props);
   }
 
 
   private load(props: Props) {
     const that = this;
-    Log.debug(`Map.load() getting: props.doc_id: ${props.doc_id}`);
+    console.log(`Map.load() getting: props.doc_id: ${props.doc_id}`);
     props.store.getDoc(props.doc_id)
       .then(function (doc: { id: string, content: string }): void {
+        const diagram: Diagram = new Diagram();
+        const loader = new MapLoader(diagram);
+        loader.parseContent(doc.content)
+        const bf: BellmanFord = new BellmanFord();
+        bf.layoutDiagram(diagram);
+        const sc: Scale = new Scale();
+        sc.layoutDiagram(diagram);
+
         that.setState({
           ready: true,
-          map: new Map(doc.id, doc.content),
+          diagram: diagram,
         });
       }) as Promise<void>;
   }
@@ -66,8 +79,8 @@ export default class Doc extends React.Component<Props, State> {
   renderReady() {
     return (
       <div>
-        <h1>{this.state.map.getTitle()}</h1>
-        {this.state.map.getSVG()}
+        <h1>{this.state.diagram.getTitle()}</h1>
+        {this.svg.drawDiagram(this.state.diagram)}
       </div>
     );
   }

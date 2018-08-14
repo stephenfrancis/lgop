@@ -2,16 +2,15 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import AjaxStore from "../../lapis/store/AjaxStore";
-import RootLog from "../../lapis/node_modules/@types/loglevel/index";
-import _ from "../../lapis/node_modules/@types/underscore/index";
+// import _ from "../../lapis/node_modules/@types/underscore/index";
 import Url from "url";
 import Doc from "./Doc";
 
 
 /* globals window */
 
-RootLog.setLevel("debug");
-const Log = RootLog.getLogger("lgop.App");
+// RootLog.setLevel("debug");
+// const Log = RootLog.getLogger("lgop.App");
 
 const Store = new AjaxStore(null, "./");
 Store.setModeServer();
@@ -35,7 +34,7 @@ class App extends React.Component<Props, State> {
     const that = this;
 
     window.onhashchange = function () {
-      Log.debug("window.onhashchange event");
+      console.log("window.onhashchange event");
       that.hashChange();
     };
     this.state = this.makeRepoDocState();
