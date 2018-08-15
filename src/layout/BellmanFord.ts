@@ -85,7 +85,10 @@ export default class BellmanFord {
   private checkForNegativeWeightCycles(): boolean {
     let found: boolean = false;
     Object.keys(this.vertices).forEach((vertex_id) => {
-      found = found || this.vertices[vertex_id].checkForNegativeWeightCycles();
+      // found = found || this.vertices[vertex_id].checkForNegativeWeightCycles();
+      // if (!found) {
+        found = found || this.vertices[vertex_id].checkForNegativeWeightCycles();
+      // }
     });
     return found;
   }
@@ -93,8 +96,9 @@ export default class BellmanFord {
 
   private finalize(): void {
     this.throwIfFinalized();
-    let trials: number = 3;
+    let trials: number = 7;
     do {
+      console.log(`BellmanFord.finalize() trials left: ${trials}`);
       this.reset();
       this.relax();
     } while (this.checkForNegativeWeightCycles() && (trials-- > 0));
@@ -235,7 +239,7 @@ export class Vertex {
   public checkForNegativeWeightCycles(): boolean {
     let found: boolean = false;
     let i: number = 0;
-    while (i < this.edges.length) {
+    while (i < this.edges.length && !found) {
       let edge = this.edges[i];
       if ((this.distance + edge.weight) < edge.to.distance) {
         found = true;
