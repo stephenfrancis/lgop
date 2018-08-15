@@ -16,10 +16,11 @@ export default class SVG {
   public drawBlock(block: Block): JSX.Element {
     const elmt_id = Uuidv4();
     const link_url = block.getLink();
-    console.log(`SVG.drawBlock ${block}`);
+    const hover_text = block.getHoverText();
+    // console.log(`SVG.drawBlock ${block}`);
     if (link_url) {
       return (
-        <a href={link_url} key={"anchor_" + elmt_id}>
+        <a href={link_url} key={"anchor_" + elmt_id} title={hover_text}>
           {this.drawRectangle(block.getCentre(), block.getHeight(), block.getWidth())}
           {this.drawText(block.getCentre(), block.getHeight(), block.getWidth(), block.getName())}
         </a>
@@ -39,7 +40,7 @@ export default class SVG {
     const children: Array<JSX.Element> = [];
     const elmt_id = Uuidv4();
     block.getConnectors().forEach(connector => {
-      console.log(`adding svg for connector: ${connector}`)
+      // console.log(`adding svg for connector: ${connector}`)
       children.push(this.drawConnector(connector));
     });
     return (
@@ -52,9 +53,14 @@ export default class SVG {
     const children: JSX.Element[] = [];
     diagram.forEachBlock((block) => {
       children.push(this.drawBlock(block));
+      children.push(this.drawBlockConnectors(block));
     });
     return (
-      <svg height="800" version="1.1" width="1200" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        height={diagram.getMaxY()}
+        version="1.1"
+        width={diagram.getMaxX()}
+        xmlns="http://www.w3.org/2000/svg">
         {children}
       </svg>
     );
