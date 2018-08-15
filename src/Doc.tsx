@@ -4,6 +4,7 @@ import AjaxStore from "../../lapis/store/AjaxStore";
 import Diagram from "./core/Diagram";
 import MapLoader from "./loaders/MapLoader";
 import BellmanFord from "./layout/BellmanFord";
+import OverlapFixer from "./layout/OverlapFixer";
 import Scale from "./layout/Scale";
 import SVG from "./drawing/SVG";
 
@@ -14,6 +15,7 @@ import SVG from "./drawing/SVG";
 interface Props {
   store: AjaxStore;
   doc_id: string;
+  fix_overlaps: boolean;
 }
 
 interface State {
@@ -22,6 +24,7 @@ interface State {
 }
 
 export default class Doc extends React.Component<Props, State> {
+  private fixer: OverlapFixer;
   private svg: SVG;
 
   constructor(props) {
@@ -29,31 +32,33 @@ export default class Doc extends React.Component<Props, State> {
     this.state = {
       ready: false,
     } as State;
+    this.fixer = new OverlapFixer();
     this.svg = new SVG();
     this.load(props);
   }
 
 
   private load(props: Props) {
-    const that = this;
     console.log(`Map.load() getting: props.doc_id: ${props.doc_id}`);
     props.store.getDoc(props.doc_id)
-      .then(function (doc: { id: string, content: string }): void {
+      .then((doc: { id: string, content: string }) => {
         const diagram: Diagram = new Diagram();
         const loader = new MapLoader(diagram);
         loader.parseContent(doc.content)
         const bf: BellmanFord = new BellmanFord();
         bf.layoutDiagram(diagram);
+        if (this.props.fix_overlaps) {
+          this.fixer.layoutDiagram(diagram);
+        }
         const sc: Scale = new Scale();
         sc.layoutDiagram(diagram);
 
-        that.setState({
+        this.setState({
           ready: true,
           diagram: diagram,
         });
       }) as Promise<void>;
   }
-
 
 
   componentWillReceiveProps(next_props) {

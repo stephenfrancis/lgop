@@ -82,21 +82,22 @@ export default class BellmanFord {
   }
 
 
-  private checkForNegativeWeightCycles(): void {
+  private checkForNegativeWeightCycles(): boolean {
+    let found: boolean = false;
     Object.keys(this.vertices).forEach((vertex_id) => {
-      this.vertices[vertex_id].checkForNegativeWeightCycles();
+      found = found || this.vertices[vertex_id].checkForNegativeWeightCycles();
     });
+    return found;
   }
 
 
   private finalize(): void {
     this.throwIfFinalized();
-    for (let i: number = 0; i < Object.keys(this.vertices).length; i += 1) {
-      Object.keys(this.vertices).forEach((vertex_id) => {
-        this.vertices[vertex_id].relax();
-      });
-    }
-    this.checkForNegativeWeightCycles();
+    let trials: number = 3;
+    do {
+      this.reset();
+      this.relax();
+    } while (this.checkForNegativeWeightCycles() && (trials-- > 0));
     this.finalized = true;
   }
 
@@ -153,23 +154,39 @@ export default class BellmanFord {
     return out;
   }
 
-   // This implementation takes in a graph, represented as
+
+  // Step 2: relax edges repeatedly
+  //  for i from 1 to size(vertices)-1:
+  private relax(): void {
+    for (let i: number = 0; i < Object.keys(this.vertices).length; i += 1) {
+      Object.keys(this.vertices).forEach((vertex_id) => {
+        this.vertices[vertex_id].relax();
+      });
+    }
+  }
+
+
+  // Step 1: initialize graph
+  //    private initializeGraph() {
+  //     for each vertex v in vertices:
+  //     distance[v] := inf             // At the beginning , all vertices have a weight of infinity
+  //     predecessor[v] := null         // And a null predecessor
+  private reset(): void {
+    Object.keys(this.vertices).forEach((vertex_id) => {
+      this.vertices[vertex_id].reset();
+    });
+  }
+
+  // This implementation takes in a graph, represented as
    // lists of vertices and edges, and fills two arrays
    // (distance and predecessor) with shortest-path
    // (less cost/distance/metric) information
 
-   // Step 1: initialize graph
-//    private initializeGraph() {
-//     for each vertex v in vertices:
-//     distance[v] := inf             // At the beginning , all vertices have a weight of infinity
-//     predecessor[v] := null         // And a null predecessor
 
 // distance[source] := 0              // The weight is zero at the source
 
   //  }
 
-   // Step 2: relax edges repeatedly
-  //  for i from 1 to size(vertices)-1:
 
    // Step 3: check for negative-weight cycles
   //  for each edge (u, v) with weight w in edges:
@@ -195,14 +212,15 @@ export interface Edge {
 export class Vertex {
   private name: string;
   private edges: Edge[];
+  private distance_init: number;
   private distance: number;
   private predecessor: Vertex;
 
   constructor(name: string, distance?: number) {
     this.name = name;
     this.edges = [];
-    this.distance = (typeof distance === "number") ? distance : 99999;
-    this.predecessor = null;
+    this.distance_init = (typeof distance === "number") ? distance : 99999;
+    this.reset();
   }
 
 
@@ -214,12 +232,20 @@ export class Vertex {
   }
 
 
-  public checkForNegativeWeightCycles(): void {
-    this.edges.forEach((edge: Edge) => {
+  public checkForNegativeWeightCycles(): boolean {
+    let found: boolean = false;
+    let i: number = 0;
+    while (i < this.edges.length) {
+      let edge = this.edges[i];
       if ((this.distance + edge.weight) < edge.to.distance) {
-        throw new Error(`negative-weight cycle between ${this.name} and ${edge.to.name}`);
+        found = true;
+        console.log(`negative-weight cycle between ${this.name} and ${edge.to.name}`);
+        this.edges.splice(i, 1);
+      } else {
+        i += 1;
       }
-    });
+    }
+    return found;
   }
 
 
@@ -253,21 +279,10 @@ export class Vertex {
     });
   }
 
+
+  public reset(): void {
+    this.distance = this.distance_init;
+    this.predecessor = null;
+  }
+
 }
-
-
-/*
-export function test() {
-  const bf = new BellmanFord();
-  bf.addBlock("Author");
-  bf.addBlock("Paper");
-  bf.addBlock("Reviewer");
-  bf.addBlock("Conference");
-  bf.addRelationship("Author", "Paper", "left");
-  bf.addRelationship("Paper", "Reviewer", "left");
-  bf.addRelationship("Paper", "Conference", "above");
-  console.log(JSON.stringify(bf.outputBlocks()));
-}
-*/
-
-// test();

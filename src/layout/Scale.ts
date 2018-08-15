@@ -1,8 +1,6 @@
 
 import Block from "../core/Block";
-import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
-import Point from "../core/Point";
 
 const margin_left: number = 5;
 const margin_top: number = 5;

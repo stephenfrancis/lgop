@@ -1,5 +1,5 @@
 
-import Fs from "fs";
+import * as Fs from "fs";
 import Diagram from "../core/Diagram";
 import MapLoader from "./MapLoader";
 
