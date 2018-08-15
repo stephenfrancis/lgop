@@ -30,7 +30,7 @@
   * Initially Contains:
     * Basket
   * S: Observation Room
-  * C: [Jungle](#venus.md)
+  * C: [Venus - Jungle](#venus.md)
 * Roof
-  * C: [Martian Desert](#mars.md)
+  * C: [Mars - Martian Desert](#mars.md)
   * D: Observation Room

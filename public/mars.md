@@ -17,7 +17,7 @@
 * Another Ruin
   * NW: Hickory Dickory Dock
   * E: Martian Desert
-  * C: [Basement](#phobos.md)
+  * C: [Phobos - Basement](#phobos.md)
 * Yet Another Ruin
   * W: Martian Desert
   * E: Martian Dessert

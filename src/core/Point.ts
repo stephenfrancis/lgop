@@ -19,7 +19,7 @@ export default class Point {
     if (out < 0) {
       out += 360;
     }
-    console.log(`bearingOf() dx: ${delta_x}, dy: ${delta_y} => ${out}`);
+    // console.log(`bearingOf() dx: ${delta_x}, dy: ${delta_y} => ${out}`);
     return out;
   }
 

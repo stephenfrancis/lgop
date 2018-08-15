@@ -5,6 +5,6 @@
   * NW: Gents
   * NE: Ladies
 * Gents
-  * C: [Cell](#phobos.md)
+  * C: [Phobos - Cell](#phobos.md)
 * Ladies
-  * C: [Cell](#phobos.md)
+  * C: [Phobos - Cell](#phobos.md)
