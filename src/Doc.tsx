@@ -15,7 +15,6 @@ import SVG from "./drawing/SVG";
 interface Props {
   store: AjaxStore;
   doc_id: string;
-  fix_overlaps: boolean;
 }
 
 interface State {
@@ -47,9 +46,7 @@ export default class Doc extends React.Component<Props, State> {
         loader.parseContent(doc.content)
         const bf: BellmanFord = new BellmanFord();
         bf.layoutDiagram(diagram);
-        if (this.props.fix_overlaps) {
-          this.fixer.layoutDiagram(diagram);
-        }
+        this.fixer.layoutDiagram(diagram);
         const sc: Scale = new Scale();
         sc.layoutDiagram(diagram);
 

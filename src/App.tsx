@@ -26,7 +26,6 @@ interface Props {}
 
 interface State {
   doc_id: string;
-  fix_overlaps: boolean;
 }
 
 class App extends React.Component<Props, State> {
@@ -49,7 +48,6 @@ class App extends React.Component<Props, State> {
 
   private makeRepoDocState(): State {
     const url = Url.parse(window.location.href);
-    let fix_overlaps: boolean = (url.query === "fix");
     let hash = url.hash || "";
     if (hash) {
       hash = hash.substr(1);
@@ -58,7 +56,6 @@ class App extends React.Component<Props, State> {
     }
     const state = {
       doc_id: hash,
-      fix_overlaps: fix_overlaps,
     } as State;
     return state;
   }
@@ -70,9 +67,7 @@ class App extends React.Component<Props, State> {
         <Doc
           store={Store}
           doc_id={this.state.doc_id}
-          fix_overlaps={this.state.fix_overlaps}
         />
-        <div>Fixing Overlaps? {String(this.state.fix_overlaps)}</div>
       </div>
     );
   }
