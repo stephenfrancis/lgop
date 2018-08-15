@@ -56,6 +56,30 @@ export default class Diagram {
   }
 
 
+  public getMaxX(): number {
+    let max_x: number = Number.NEGATIVE_INFINITY;
+    this.forEachBlock((block) => {
+      const x: number = block.getCentre().getX() + (block.getWidth() / 2);
+      if (x > max_x) {
+        max_x = x;
+      }
+    });
+    return max_x + 15; // allow for border and connector paths
+  }
+
+
+  public getMaxY(): number {
+    let max_y: number = Number.NEGATIVE_INFINITY;
+    this.forEachBlock((block) => {
+      const y: number = block.getCentre().getY() + (block.getHeight() / 2);
+      if (y > max_y) {
+        max_y = y;
+      }
+    });
+    return max_y + 15; // allow for border and connector paths
+  }
+
+
   public getTitle(): string {
     return this.title;
   }

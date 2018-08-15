@@ -7,6 +7,7 @@ export default class Block {
   private centre: Point;
   private connectors: Connector[];
   private height: number = 24;
+  private hover_text: string;
   private link_url: string;
   private name: string;
   private width: number = 120;
@@ -50,6 +51,11 @@ export default class Block {
   }
 
 
+  public getHoverText(): string {
+    return this.hover_text;
+  }
+
+
   public getLink(): string {
     return this.link_url;
   }
@@ -75,6 +81,11 @@ export default class Block {
 
   public setHeight(height: number): void {
     this.height = height;
+  }
+
+
+  public setHoverText(hover_text: string): void {
+    this.hover_text = hover_text;
   }
 
 

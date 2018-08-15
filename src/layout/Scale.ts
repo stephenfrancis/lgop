@@ -2,10 +2,10 @@
 import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 
-const margin_left: number = 5;
-const margin_top: number = 5;
-const inter_block_padding_x: number = 10;
-const inter_block_padding_y: number = 10;
+const margin_left: number = 15; // allow for connector paths
+const margin_top: number = 15; // allow for connector paths
+const inter_block_padding_x: number = 30;
+const inter_block_padding_y: number = 30;
 
 
 export default class Scale {
