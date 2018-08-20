@@ -1,6 +1,4 @@
 
-import Direction from "./Direction";
-
 
 export default class Point {
   private x: number;
@@ -11,26 +9,15 @@ export default class Point {
     this.y = y;
   }
 
-
-  public bearingOf(to: Point): number {
-    const delta_x = to.x - this.x;
-    const delta_y = to.y - this.y;
-    let out = Math.atan2(delta_x, -delta_y) * 180 / Math.PI;
-    if (out < 0) {
-      out += 360;
-    }
-    // console.log(`bearingOf() dx: ${delta_x}, dy: ${delta_y} => ${out}`);
-    return out;
+  // point functioning as a cartesian vector...
+  public add(other_point: Point): void {
+    this.x += other_point.getX();
+    this.y += other_point.getY();
   }
 
 
-  public directionNearest(to: Point): Direction {
-    return Direction.nearest(this.bearingOf(to));
-  }
-
-
-  public distanceOf(to: Point): number {
-    return Math.sqrt(Math.pow(to.x - this.x, 2) + Math.pow(to.y - this.y, 2));
+  public clone(): Point {
+    return new Point(this.x, this.y);
   }
 
 
@@ -58,6 +45,13 @@ export default class Point {
   public setY(y: number): void {
     this.y = y;
   }
+
+
+    // point functioning as a cartesian vector...
+    public subtract(other_point: Point) {
+      this.x -= other_point.getX();
+      this.y -= other_point.getY();
+      }
 
 
   public toString(): string {

@@ -1,7 +1,9 @@
 
 import Block from "./Block";
 import Direction from "./Direction";
+import LineSegment from "./LineSegment";
 import Point from "./Point";
+import Vector from "./Vector";
 
 
 export default class Connector {
@@ -9,12 +11,19 @@ export default class Connector {
   private from_dir?: Direction;
   private to: Block;
   private to_dir?: Direction;
+  private lines: LineSegment[];
 
   constructor(from: Block, to: Block, from_dir?: Direction, to_dir?: Direction) {
     this.from = from;
     this.from_dir = from_dir;
     this.to = to;
     this.to_dir = to_dir;
+    this.lines = [];
+  }
+
+
+  public addLineSegment(line: LineSegment): void {
+    this.lines.push(line);
   }
 
 
@@ -29,13 +38,24 @@ export default class Connector {
   }
 
 
+  public forEachLineSegment(callback: (line: LineSegment) => void): void {
+    this.lines.forEach((line: LineSegment) => {
+      callback(line);
+    });
+  }
+
+
   public getFrom(): Block {
     return this.from;
   }
 
 
   public getFromDirection(): Direction {
-    return this.from_dir || this.from.getCentre().directionNearest(this.to.getCentre());
+    if (this.from_dir) {
+      return this.from_dir;
+    }
+    const v: Vector = Vector.between(this.to.getCentre(), this.from.getCentre());
+    return Direction.nearest(v.getBearing());
   }
 
 
@@ -45,7 +65,11 @@ export default class Connector {
 
 
   public getToDirection(): Direction {
-    return this.to_dir || this.to.getCentre().directionNearest(this.from.getCentre());
+    if (this.to_dir) {
+      return this.to_dir;
+    }
+    const v: Vector = Vector.between(this.to.getCentre(), this.from.getCentre());
+    return Direction.nearest(v.getBearing());
   }
 
 

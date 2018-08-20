@@ -6,6 +6,7 @@ import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
 import Direction from "../core/Direction";
 import Point from "../core/Point";
+import LineSegment from "../core/LineSegment";
 
 
 export default class SVG {
@@ -51,8 +52,11 @@ export default class SVG {
 
   public drawDiagram(diagram: Diagram): JSX.Element {
     const children: JSX.Element[] = [];
+    // iterated separately, to ensure all connectors lie over all blocks
     diagram.forEachBlock((block) => {
       children.push(this.drawBlock(block));
+    });
+    diagram.forEachBlock((block) => {
       children.push(this.drawBlockConnectors(block));
     });
     return (
@@ -98,21 +102,17 @@ export default class SVG {
 
 
   public drawConnector(connector: Connector): JSX.Element {
-    const from_dir: Direction = connector.getFromDirection();
-    const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
-    const from_shift: Point = connector.shift(from_anchor, from_dir);
-    const to_dir: Direction = connector.getToDirection();
-    const to_anchor: Point = connector.getTo().getAnchorPoint(to_dir);
-    const to_shift: Point = connector.shift(to_anchor, to_dir);
-    const elbow: Point = new Point(from_shift.getX(), to_shift.getY());
+    const children: JSX.Element[] = [];
+    connector.forEachLineSegment((line: LineSegment) => {
+      children.push(this.drawLine(line.getFrom(), line.getTo()));
+      if (line.getArrowheadBearingTo()) {
+        children.push(this.drawArrowHead(line.getTo(), line.getArrowheadBearingTo()));
+      }
+    });
     const elmt_id = Uuidv4();
     return (
       <g key={elmt_id}>
-        {this.drawLine(from_anchor, from_shift)}
-        {this.drawLine(from_shift, elbow)}
-        {this.drawLine(elbow, to_shift)}
-        {this.drawLine(to_shift, to_anchor)}
-        {this.drawArrowHead(to_anchor, to_dir.getAngle() + 180)}
+        {children}
       </g>
     );
   }
