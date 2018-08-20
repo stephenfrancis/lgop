@@ -6,8 +6,11 @@ import Point from "../core/Point";
 import Vector from "../core/Vector";
 
 
-const REPULSION_CONSTANT: number = 10;
-const ATTRACTION_CONSTANT: number = 10;
+const REPULSION_CONSTANT: number = 0.0001;
+const ATTRACTION_CONSTANT: number = 0.0001;
+const DEFAULT_SPRING_LENGTH: number = 50;
+const MAX_ITERATIONS: number = 1000;
+const MIN_DISPLACEMENT_THRESHOLD: number = 1;
 
 
 export default class ForceDirected {
@@ -62,21 +65,30 @@ export default class ForceDirected {
 
   public begin(): void {
     this.throwIfFinalized();
-    this.iterations = 10;
+    this.iterations = MAX_ITERATIONS;
     this.total_disp = 0;
     this.reset();
   }
 
+
+  public beginDiagram(diagram: Diagram): void {
+    diagram.forEachBlock((block: Block) => {
+      this.addBlock(block);
+    });
+    diagram.forEachBlock((block: Block) => {
+      block.getConnectors().forEach((connector: Connector) => {
+        this.addRelationship(
+          block,
+          connector.getTo());
+      });
+    });
+    this.begin();
+    this.setBlockPositionFromNodes();
+  }
+
+
   private finalize(): void {
     this.throwIfFinalized();
-    let iterations: number = 0;
-    let total_disp: number;
-    this.reset();
-    do {
-      this.allNodesCalcForceAndVelocity();
-      total_disp += this.allNodesCalcDisplacement();
-      iterations += 1;
-    } while (iterations < 100 && total_disp > 100);
     this.finalized = true;
   }
 
@@ -92,6 +104,11 @@ export default class ForceDirected {
   }
 
 
+  public getTotalDisplacement(): number {
+    return this.total_disp;
+  }
+
+
   public iterate(): boolean {
     this.throwIfFinalized();
     if (this.iterations < 1) {
@@ -101,34 +118,36 @@ export default class ForceDirected {
     this.allNodesCalcForceAndVelocity();
     this.iterations -= 1;
     this.total_disp = this.allNodesCalcDisplacement();
-    if (this.total_disp < 10) {
+    this.setBlockPositionFromNodes();
+
+    if (this.total_disp < MIN_DISPLACEMENT_THRESHOLD) {
       this.iterations = 0;
     }
-    return (this.iterations > 0); // more iterations required
+    const more_iterations_required: boolean = (this.iterations > 0);
+    if (!more_iterations_required) {
+      this.finalize();
+    }
+    return more_iterations_required;
   }
 
 
   public layoutDiagram(diagram: Diagram) {
-    diagram.forEachBlock((block: Block) => {
-      this.addBlock(block);
-    });
-    diagram.forEachBlock((block: Block) => {
-      block.getConnectors().forEach((connector: Connector) => {
-        this.addRelationship(
-          block,
-          connector.getTo());
-      });
-    });
+    this.beginDiagram(diagram);
+    while (this.iterate());
     this.finalize();
-    this.nodes.forEach((node: Node) => {
-      node.setBlockPositionFromNode();
-    });
   }
 
 
   public reset(): void {
     this.nodes.forEach((node: Node) => {
       node.reset();
+    });
+  }
+
+
+  public setBlockPositionFromNodes(): void {
+    this.nodes.forEach((node: Node) => {
+      node.setBlockPositionFromNode();
     });
   }
 
@@ -161,16 +180,9 @@ class Node {
   }
 
 
-  public getVectorTo(other_node: Node): Vector {
-    const v: Vector = Vector.fromOriginTo(other_node.position);
-    v.subtract(Vector.fromOriginTo(this.position));
-    return v;
-  }
-
-
   public calcAttraction(): void {
     this.edges.forEach((other_node: Node) => {
-      this.force.add(this.calcAttractionForce(other_node, 10));
+      this.force.add(this.calcAttractionForce(other_node, DEFAULT_SPRING_LENGTH));
     });
   }
 
@@ -218,6 +230,13 @@ class Node {
   }
 
 
+  public getVectorTo(other_node: Node): Vector {
+    const v: Vector = Vector.fromOriginTo(other_node.position);
+    v.subtract(Vector.fromOriginTo(this.position));
+    return v;
+  }
+
+
   public initializeForce(): void {
     this.force = new Vector(0, 0);
   }
@@ -229,13 +248,14 @@ class Node {
 
 
   public reset(): void {
-    this.position = new Point(Math.random() * 100, Math.random() * 100);
+    this.position = new Point((0.1 + Math.random()) * 800, (0.1 + Math.random()) * 500);
     this.velocity = new Vector(0, 0);
   }
 
 
   public setBlockPositionFromNode(): void {
     this.block.getCentre().setTo(this.position);
+    // console.log(`setBlockPositionFromNode() ${this.block}`);
   }
 
 

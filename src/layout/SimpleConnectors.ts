@@ -28,6 +28,7 @@ export default class SimpleConnectors {
 
 
   public doConnector(connector: Connector): void {
+    connector.resetLineSegments();
     if (this.sophistication === 1) {
       this.doLevel1(connector);
     } else if (this.sophistication === 2) {

@@ -78,6 +78,11 @@ export default class Connector {
   }
 
 
+  public resetLineSegments(): void {
+    this.lines = [];
+  }
+
+
   public shift(from: Point, dir: Direction): Point {
     const len = 20;
     return new Point(
