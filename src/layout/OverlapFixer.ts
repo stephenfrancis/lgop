@@ -1,12 +1,10 @@
 
 import Block from "../core/Block";
-import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
-import Point from "../core/Point";
+import ILayout from "./ILayout";
 
 
-
-export default class OverlapFixer {
+export default class OverlapFixer implements ILayout {
   private cells: Cell[][];
   private max_x: number;
   private max_y: number;
@@ -20,6 +18,14 @@ export default class OverlapFixer {
     const x: number = block.getCentre().getX();
     const y: number = block.getCentre().getY();
     this.makeCellAt(x, y).addBlock(block);
+  }
+
+
+  public beginDiagram(diagram: Diagram) {
+    this.clear();
+    diagram.forEachBlock((block: Block) => {
+      this.addBlock(block);
+    });
   }
 
 
@@ -37,12 +43,9 @@ export default class OverlapFixer {
   }
 
 
-  public layoutDiagram(diagram: Diagram) {
-    this.clear();
-    diagram.forEachBlock((block: Block) => {
-      this.addBlock(block);
-    });
+  public iterate(): boolean {
     this.loopOverCellsX();
+    return false;
   }
 
 

@@ -1,6 +1,7 @@
 
 import Block from "../core/Block";
 import Diagram from "../core/Diagram";
+import ILayout from "./ILayout";
 
 const margin_left: number = 15; // allow for connector paths
 const margin_top: number = 15; // allow for connector paths
@@ -8,7 +9,7 @@ const inter_block_padding_x: number = 30;
 const inter_block_padding_y: number = 30;
 
 
-export default class Scale {
+export default class Scale implements ILayout {
   private columns: Column[];
   private rows: Row[];
   private max_col: number;
@@ -47,6 +48,13 @@ export default class Scale {
   }
 
 
+  public beginDiagram(diagram: Diagram) {
+    diagram.forEachBlock((block: Block) => {
+      this.addBlock(block);
+    });
+  }
+
+
   private getColumn(x: number): Column {
     if (!this.columns[x]) {
       this.columns[x] = new Column(x);
@@ -63,12 +71,10 @@ export default class Scale {
   }
 
 
-  public layoutDiagram(diagram: Diagram) {
-    diagram.forEachBlock((block: Block) => {
-      this.addBlock(block);
-    });
+  public iterate(): boolean {
     this.rescaleColumns();
     this.rescaleRows();
+    return false;
   }
 
 

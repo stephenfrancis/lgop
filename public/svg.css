@@ -19,3 +19,24 @@ a > rect {
   fill: #ccc;
   cursor: pointer;
 }
+
+
+form {
+  bottom: 0;
+  font-size: 10pt;
+  position: fixed;
+}
+
+form > span {
+  border: 1px solid #999;
+  display: inline-block;
+  margin: 5px;
+  padding: 5px;
+}
+
+form input {
+  border: 0;
+  margin-left: 5px;
+  text-align: right;
+  width: 60px;
+}

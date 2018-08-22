@@ -11,10 +11,12 @@ test("readMars", () => {
   const loader = new MapLoaderFile(diagram);
   loader.readFile("public/mars.md");
   const bf: BellmanFord = new BellmanFord();
-  bf.layoutDiagram(diagram);
+  bf.beginDiagram(diagram);
+  while (bf.iterate());
 
   const of: OverlapFixer = new OverlapFixer();
-  of.layoutDiagram(diagram);
+  of.beginDiagram(diagram);
+  while (of.iterate());
   // const sc: Scale = new Scale();
   // sc.layoutDiagram(diagram);
   console.log(diagram.output());

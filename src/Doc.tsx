@@ -15,8 +15,16 @@ import SVG from "./drawing/SVG";
 
 
 interface Props {
+  blockLayout: string; // fd = ForceDirected, bf = BellmanFord + OverlapFixer + Scale
+  blockIterations: number;
+  blockFDAttraction: number;
+  blockFDRepulsion: number;
+  blockFDSpringLength: number;
+  blockFDDispThresh: number;
+  connectorLayout: string; // sc = SimpleConnectors
+  connectorSophistication: number;
   store: AjaxStore;
-  doc_id: string;
+  docId: string;
 }
 
 interface State {
@@ -27,9 +35,6 @@ interface State {
 
 export default class Doc extends React.Component<Props, State> {
   private fd: ForceDirected;
-  private fixer: OverlapFixer;
-  private svg: SVG;
-  private sc: SimpleConnectors;
   private proceed: boolean;
 
   constructor(props) {
@@ -39,15 +44,12 @@ export default class Doc extends React.Component<Props, State> {
       iteration: 0,
     } as State;
     this.proceed = false;
-    this.fixer = new OverlapFixer();
-    this.svg = new SVG();
-    this.sc = new SimpleConnectors(1);
     this.load(props);
   }
 
 
   private load(props: Props) {
-    console.log(`Map.load() getting: props.doc_id: ${props.doc_id}`);
+    console.log(`Map.load() getting: props.doc_id: ${props.docId}`);
     const iterate = () => {
       if (!this.proceed) {
         return;
@@ -61,25 +63,34 @@ export default class Doc extends React.Component<Props, State> {
         iteration: this.state.iteration + 1,
       });
     };
-    props.store.getDoc(props.doc_id)
+    props.store.getDoc(props.docId)
       .then((doc: { id: string, content: string }) => {
         const diagram: Diagram = new Diagram();
         const loader = new MapLoader(diagram);
         loader.parseContent(doc.content);
 
-        // const bf: BellmanFord = new BellmanFord();
-        // bf.layoutDiagram(diagram);
-        // this.fixer.layoutDiagram(diagram);
+        if (this.props.blockLayout === "bf") {
+          const bf: BellmanFord = new BellmanFord();
+          bf.beginDiagram(diagram);
+          while (bf.iterate());
+          const of: OverlapFixer = new OverlapFixer();
+          of.beginDiagram(diagram);
+          while (of.iterate());
+          const sc: Scale = new Scale();
+          sc.beginDiagram(diagram);
+          while (sc.iterate());
+      } else {
+          this.fd = new ForceDirected(this.props.blockFDAttraction,
+            this.props.blockFDRepulsion, this.props.blockFDSpringLength,
+            this.props.blockIterations, this.props.blockFDDispThresh);
+          this.fd.beginDiagram(diagram);
+          this.proceed = true;
+          iterate();
+        }
 
         // const fd: ForceDirected = new ForceDirected();
-        this.fd = new ForceDirected();
-        this.fd.beginDiagram(diagram);
-        this.proceed = true;
-        iterate();
         // fd.layoutDiagram(diagram);
 
-        // const sc: Scale = new Scale();
-        // sc.layoutDiagram(diagram);
 
         // simple_conns.layoutDiagram(diagram);
 
@@ -113,11 +124,14 @@ export default class Doc extends React.Component<Props, State> {
 
 
   renderReady() {
-    this.sc.layoutDiagram(this.state.diagram);
+    const sc: SimpleConnectors = new SimpleConnectors(this.props.connectorSophistication);
+    sc.layoutDiagram(this.state.diagram);
+    const svg: SVG = new SVG();
+
     return (
       <div>
         <h1>{this.state.diagram.getTitle()}</h1>
-        {this.svg.drawDiagram(this.state.diagram)}
+        {svg.drawDiagram(this.state.diagram)}
       </div>
     );
   }

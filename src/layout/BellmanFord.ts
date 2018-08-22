@@ -2,6 +2,7 @@
 import Block from "../core/Block";
 import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
+import ILayout from "./ILayout";
 
 
 const constraints = {
@@ -33,7 +34,8 @@ const constraints = {
   D : { x: -1, y:  1, },
 }
 
-export default class BellmanFord {
+export default class BellmanFord implements ILayout {
+  private diagram: Diagram;
   private finalized: boolean;
   private vertices: { [index: string]: Vertex };
   private blocks: string[];
@@ -82,6 +84,22 @@ export default class BellmanFord {
   }
 
 
+  public beginDiagram(diagram: Diagram) {
+    this.diagram = diagram;
+    diagram.forEachBlock((block: Block) => {
+      this.addBlock(block.getName());
+    });
+    diagram.forEachBlock((block: Block) => {
+        block.getConnectors().forEach((connector: Connector) => {
+        this.addRelationship(
+          block.getName(),
+          connector.getTo().getName(),
+          connector.getFromDirection().getId());
+      });
+    });
+  }
+
+
   private checkForNegativeWeightCycles(): boolean {
     let found: boolean = false;
     Object.keys(this.vertices).forEach((vertex_id) => {
@@ -114,24 +132,14 @@ export default class BellmanFord {
   }
 
 
-  public layoutDiagram(diagram: Diagram) {
-    diagram.forEachBlock((block: Block) => {
-      this.addBlock(block.getName());
-    });
-    diagram.forEachBlock((block: Block) => {
-        block.getConnectors().forEach((connector: Connector) => {
-        this.addRelationship(
-          block.getName(),
-          connector.getTo().getName(),
-          connector.getFromDirection().getId());
-      });
-    });
+  public iterate(): boolean {
     this.finalize();
-    diagram.forEachBlock((block: Block) => {
+    this.diagram.forEachBlock((block: Block) => {
       const name: string = block.getName();
       block.getCentre().setX(this.vertices[name + ".x"].getDistance());
       block.getCentre().setY(this.vertices[name + ".y"].getDistance());
     });
+    return false;
   }
 
 

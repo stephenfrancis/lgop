@@ -88,7 +88,7 @@ export default class Vector {
 
 
   public toString(): string {
-    return `[${this.magnitude}, ${this.bearing}]`;
+    return `[${this.magnitude.toFixed(3)}, ${this.bearing.toFixed(3)}°]`;
   }
 
 }

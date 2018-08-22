@@ -4,30 +4,35 @@ import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
 import Point from "../core/Point";
 import Vector from "../core/Vector";
+import ILayout from "./ILayout";
 
 
-const REPULSION_CONSTANT: number = 0.0001;
-const ATTRACTION_CONSTANT: number = 0.0001;
-const DEFAULT_SPRING_LENGTH: number = 50;
-const MAX_ITERATIONS: number = 1000;
-const MIN_DISPLACEMENT_THRESHOLD: number = 1;
-
-
-export default class ForceDirected {
+export default class ForceDirected implements ILayout {
+  private attraction_constant: number;
+  private def_spring_length: number;
   private finalized: boolean;
   private iterations: number;
+  private min_disp_threshold: number;
+  private max_iterations: number;
   private nodes: Node[];
+  private repulsion_constant: number;
   private total_disp: number;
 
-  constructor() {
+  constructor(attraction_constant: number, repulsion_constant: number,
+    def_spring_length: number, max_iterations: number, min_disp_threshold: number) {
+    this.attraction_constant = attraction_constant;
+    this.def_spring_length = def_spring_length;
     this.finalized = false;
+    this.min_disp_threshold = min_disp_threshold;
+    this.max_iterations = max_iterations;
     this.nodes = [];
+    this.repulsion_constant = repulsion_constant;
   }
 
 
   public addBlock(block: Block): Node {
     this.throwIfFinalized();
-    const node: Node = new Node(block);
+    const node: Node = new Node(this, block);
     this.nodes.push(node);
     return node;
   }
@@ -53,10 +58,11 @@ export default class ForceDirected {
 
 
   private allNodesCalcForceAndVelocity(): void {
-    this.nodes.forEach((node: Node) => {
+    console.log(`sampling node: ${this.nodes[0].getBlock().getName()}`);
+    this.nodes.forEach((node: Node, index: number) => {
       node.initializeForce();
-      node.calcRepulsion(this.nodes);
-      node.calcAttraction();
+      node.calcRepulsion(index === 0);
+      node.calcAttraction(index === 0);
       node.updateVelocity();
       node.calcNewPosition();
     });
@@ -65,7 +71,11 @@ export default class ForceDirected {
 
   public begin(): void {
     this.throwIfFinalized();
-    this.iterations = MAX_ITERATIONS;
+    this.iterations = this.max_iterations;
+    if (this.nodes.length < 2) {
+      // throw new Error(`need at least 2 nodes, currently: ${this.nodes.length}`);
+      this.iterations = 0; // skip further processing
+    }
     this.total_disp = 0;
     this.reset();
   }
@@ -93,6 +103,11 @@ export default class ForceDirected {
   }
 
 
+  public forEachNode(callback: (node: Node) => void): void {
+    this.nodes.forEach(callback);
+  }
+
+
   private getNodeFromBlock(block: Block): Node {
     let found_node: Node;
     this.nodes.forEach((node: Node) => {
@@ -101,6 +116,21 @@ export default class ForceDirected {
       }
     });
     return found_node;
+  }
+
+
+  public getAttractionConstant(): number {
+    return this.attraction_constant;
+  }
+
+
+  public getDefaultSpringLength(): number {
+    return this.def_spring_length;
+  }
+
+
+  public getRepulsionConstant(): number {
+    return this.repulsion_constant;
   }
 
 
@@ -120,7 +150,7 @@ export default class ForceDirected {
     this.total_disp = this.allNodesCalcDisplacement();
     this.setBlockPositionFromNodes();
 
-    if (this.total_disp < MIN_DISPLACEMENT_THRESHOLD) {
+    if ((this.total_disp / this.nodes.length) < this.min_disp_threshold) {
       this.iterations = 0;
     }
     const more_iterations_required: boolean = (this.iterations > 0);
@@ -128,13 +158,6 @@ export default class ForceDirected {
       this.finalize();
     }
     return more_iterations_required;
-  }
-
-
-  public layoutDiagram(diagram: Diagram) {
-    this.beginDiagram(diagram);
-    while (this.iterate());
-    this.finalize();
   }
 
 
@@ -163,15 +186,17 @@ export default class ForceDirected {
 
 class Node {
   private block: Block;
+  private fd: ForceDirected;
   private position: Point;
   private new_position: Point;
   private force: Vector;
   private velocity: Vector;
   private edges: Node[];
 
-  constructor(block: Block) {
+  constructor(fd: ForceDirected, block: Block) {
     this.block = block;
     this.edges = [];
+    this.fd = fd;
   }
 
 
@@ -180,17 +205,23 @@ class Node {
   }
 
 
-  public calcAttraction(): void {
+  public calcAttraction(sample: boolean): void {
     this.edges.forEach((other_node: Node) => {
-      this.force.add(this.calcAttractionForce(other_node, DEFAULT_SPRING_LENGTH));
+      const v: Vector = this.calcAttractionForce(other_node,
+        this.fd.getDefaultSpringLength());
+      this.force.add(v);
+      if (sample) {
+        this.outputVectors("attract", v);
+      }
     });
   }
 
 
   public calcAttractionForce(other_node: Node, spring_length: number): Vector {
     const between: Vector = this.getVectorTo(other_node);
-    const proximity: number = Math.max(between.getMagnitude(), 1);
-    between.setMagnitude(ATTRACTION_CONSTANT * Math.max(proximity - spring_length, 0));
+    const proximity: number = Math.max(between.getMagnitude(), 1000);
+    between.setMagnitude(this.fd.getAttractionConstant()
+      * Math.max(proximity - spring_length, 1000));
     return between;
   }
 
@@ -208,10 +239,14 @@ class Node {
   }
 
 
-  public calcRepulsion(all_nodes: Node[]): void {
-    all_nodes.forEach((other_node: Node) => {
+  public calcRepulsion(sample: boolean): void {
+    this.fd.forEachNode((other_node: Node) => {
       if (other_node !== this) {
-        this.force.add(this.calcRepulsionForce(other_node));
+        const v: Vector = this.calcRepulsionForce(other_node);
+        this.force.add(v);
+        if (sample) {
+          this.outputVectors("repulse", v);
+        }
       }
     });
   }
@@ -219,8 +254,8 @@ class Node {
 
   public calcRepulsionForce(other_node: Node): Vector {
     const between: Vector = this.getVectorTo(other_node);
-    const proximity: number = Math.max(between.getMagnitude(), 1);
-    between.setMagnitude(-(REPULSION_CONSTANT / Math.pow(proximity, 2)));
+    const proximity: number = Math.max(between.getMagnitude(), 1000);
+    between.setMagnitude(-(this.fd.getRepulsionConstant() / Math.pow(proximity, 2)));
     return between;
   }
 
@@ -246,6 +281,10 @@ class Node {
     this.position = this.new_position;
   }
 
+
+  private outputVectors(label: string, v: Vector): void {
+    console.log(`${label} d: ${v} f: ${this.force} v: ${this.velocity} p: ${this.position}`);
+  }
 
   public reset(): void {
     this.position = new Point((0.1 + Math.random()) * 800, (0.1 + Math.random()) * 500);
