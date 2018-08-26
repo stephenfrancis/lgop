@@ -7,6 +7,8 @@ import Vector from "../core/Vector";
 import ILayout from "./ILayout";
 
 
+const sample_node: number = -1;
+
 export default class ForceDirected implements ILayout {
   private attraction_constant: number;
   private def_spring_length: number;
@@ -58,11 +60,13 @@ export default class ForceDirected implements ILayout {
 
 
   private allNodesCalcForceAndVelocity(): void {
-    console.log(`sampling node: ${this.nodes[0].getBlock().getName()}`);
+    if (sample_node >= 0 && sample_node < this.nodes.length) {
+      console.log(`sampling node: ${this.nodes[0].getBlock().getName()}`);
+    }
     this.nodes.forEach((node: Node, index: number) => {
       node.initializeForce();
-      node.calcRepulsion(index === 0);
-      node.calcAttraction(index === 0);
+      node.calcRepulsion(index === sample_node);
+      node.calcAttraction(index === sample_node);
       node.updateVelocity();
       node.calcNewPosition();
     });
