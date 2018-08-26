@@ -5,6 +5,7 @@ import AjaxStore from "../../lapis/store/AjaxStore";
 // import _ from "../../lapis/node_modules/@types/underscore/index";
 import Url from "url";
 import Doc from "./Doc";
+import InputGenerator from "./InputGenerator";
 
 
 /* globals window */
@@ -15,7 +16,7 @@ import Doc from "./Doc";
 const REPULSION_CONSTANT: number = 1000;
 const ATTRACTION_CONSTANT: number = 0.0001;
 const DEFAULT_SPRING_LENGTH: number = 100;
-const MAX_ITERATIONS: number = 1000;
+const MAX_ITERATIONS: number = 100;
 const MIN_DISPLACEMENT_THRESHOLD: number = 0.05;
 
 
@@ -44,6 +45,9 @@ interface State {
 }
 
 class App extends React.Component<Props, State> {
+  private input_connector_layout: InputGenerator;
+  private input_connector_sophistication: InputGenerator;
+
   constructor(props) {
     super(props);
     const that = this;
@@ -52,40 +56,73 @@ class App extends React.Component<Props, State> {
       console.log("window.onhashchange event");
       that.hashChange();
     };
-    this.changeAttractionConstant = this.changeAttractionConstant.bind(this);
-    this.changeDefaultSpringLength = this.changeDefaultSpringLength.bind(this);
+    this.changeAttractionConstant    = this.changeAttractionConstant   .bind(this);
+    this.changeBlockLayout           = this.changeBlockLayout          .bind(this);
+    this.changeDefaultSpringLength   = this.changeDefaultSpringLength  .bind(this);
     this.changeDisplacementThreshold = this.changeDisplacementThreshold.bind(this);
-    this.changeRepulsionConstant = this.changeRepulsionConstant.bind(this);
+    this.changeRepulsionConstant     = this.changeRepulsionConstant    .bind(this);
 
-    this.state = this.makeRepoDocState();
+    this.state = this.makeRepoDocState({
+      block_fd_attraction: ATTRACTION_CONSTANT,
+      block_fd_disp_thresh: MIN_DISPLACEMENT_THRESHOLD,
+      block_fd_repulsion: REPULSION_CONSTANT,
+      block_fd_spring_length: DEFAULT_SPRING_LENGTH,
+      block_iterations: MAX_ITERATIONS,
+      block_layout: "fd",
+      // connector_layout: "sc",
+      // connector_sophistication: 2,
+    });
+    this.input_connector_layout = new InputGenerator(this, "string", "connector_layout", "sc", "Connector Layout");
+    this.input_connector_sophistication = new InputGenerator(this, "number", "connector_sophistication", 1, "Connector Sophistication");
   }
 
 
   private changeAttractionConstant(event: any): void {
     this.setState({
-      block_fd_attraction: (event.target.value || "").parseFloat() || 0,
-    })
+      block_fd_attraction: App.getNumberFromEvent(event),
+    });
+  }
+
+
+  private changeBlockLayout(event: any): void {
+    this.setState({
+      block_layout: App.getStringFromEvent(event),
+    });
   }
 
 
   private changeDefaultSpringLength(event: any): void {
     this.setState({
-      block_fd_spring_length: (event.target.value || "").parseFloat() || 0,
+      block_fd_spring_length: App.getNumberFromEvent(event),
     })
   }
 
 
   private changeDisplacementThreshold(event: any): void {
     this.setState({
-      block_fd_disp_thresh: (event.target.value || "").parseFloat() || 0,
+      block_fd_disp_thresh: App.getNumberFromEvent(event),
     })
   }
 
 
   private changeRepulsionConstant(event: any): void {
     this.setState({
-      block_fd_repulsion: (event.target.value || "").parseFloat() || 0,
+      block_fd_repulsion: App.getNumberFromEvent(event),
     })
+  }
+
+
+  private static getNumberFromEvent(event: any): number {
+    let num: number = parseFloat(this.getStringFromEvent(event));
+    if (!Number.isFinite(num)) {
+      num = 0;
+    }
+    return num;
+  }
+
+
+  private static getStringFromEvent(event: any): string {
+    return event && event.target && event.target.value || "";
   }
 
 
@@ -94,7 +131,8 @@ class App extends React.Component<Props, State> {
   }
 
 
-  private makeRepoDocState(): State {
+  private makeRepoDocState(defaults?: any): State {
+    const state = defaults || {};
     const url = Url.parse(window.location.href);
     let hash = url.hash || "";
     if (hash) {
@@ -102,17 +140,7 @@ class App extends React.Component<Props, State> {
     } else {
       hash = "README.md";
     }
-    const state = {
-      block_fd_attraction: ATTRACTION_CONSTANT,
-      block_fd_disp_thresh: MIN_DISPLACEMENT_THRESHOLD,
-      block_fd_repulsion: REPULSION_CONSTANT,
-      block_fd_spring_length: DEFAULT_SPRING_LENGTH,
-      block_iterations: MAX_ITERATIONS,
-      block_layout: "fd",
-      connector_layout: "sc",
-      connector_sophistication: 1,
-      doc_id: hash,
-    } as State;
+    state.doc_id = hash;
     return state;
   }
 
@@ -129,8 +157,8 @@ class App extends React.Component<Props, State> {
           blockFDRepulsion={this.state.block_fd_repulsion}
           blockFDSpringLength={this.state.block_fd_spring_length}
           blockFDDispThresh={this.state.block_fd_disp_thresh}
-          connectorLayout={this.state.connector_layout}
-          connectorSophistication={this.state.connector_sophistication}
+          connectorLayout={this.input_connector_layout.getValue()}
+          connectorSophistication={this.input_connector_sophistication.getValue()}
         />
         {this.renderForm()}
       </div>
@@ -141,6 +169,14 @@ class App extends React.Component<Props, State> {
   renderForm(): JSX.Element {
     return (
       <form>
+        <span>
+          Block Layout:
+          <input
+            type="text"
+            defaultValue={this.state.block_layout}
+            onBlur={this.changeBlockLayout}
+          />
+        </span>
         <span>
           Attraction Constant:
           <input
@@ -173,6 +209,8 @@ class App extends React.Component<Props, State> {
             onBlur={this.changeDisplacementThreshold}
           />
         </span>
+        {this.input_connector_layout.getControlBox()}
+        {this.input_connector_sophistication.getControlBox()}
       </form>
     );
   }
