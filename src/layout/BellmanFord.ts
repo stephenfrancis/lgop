@@ -161,7 +161,9 @@ export default class BellmanFord implements ILayout {
     }
     const out: string[] = [];
     this.blocks.forEach((name) => {
-      out.push(`${name}: ${this.vertices[name + ".x"].getDistance()}, ${this.vertices[name + ".y"].getDistance()}`);
+      out.push(name + ": "
+        + this.vertices[name + ".x"].getDistance() + ", "
+        + this.vertices[name + ".y"].getDistance());
     });
     return out;
   }
