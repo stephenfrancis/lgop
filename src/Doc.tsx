@@ -55,7 +55,7 @@ export default class Doc extends React.Component<Props, State> {
         return;
       }
       const again: boolean = this.fd.iterate();
-      console.log(`iterate() ${this.state.iteration} again? ${again} total_disp: ${this.fd.getTotalDisplacement()}`);
+      // console.log(`iterate() ${this.state.iteration} again? ${again} total_disp: ${this.fd.getTotalDisplacement()}`);
       if (again) {
         setTimeout(iterate);
       }
@@ -69,6 +69,7 @@ export default class Doc extends React.Component<Props, State> {
         const loader = new MapLoader(diagram);
         loader.parseContent(doc.content);
 
+        console.log(`Doc.load():getDoc() blockLayout? ${this.props.blockLayout}`);
         if (this.props.blockLayout === "bf") {
           const bf: BellmanFord = new BellmanFord();
           bf.beginDiagram(diagram);
