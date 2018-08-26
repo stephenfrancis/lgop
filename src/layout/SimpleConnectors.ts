@@ -13,8 +13,8 @@ export default class SimpleConnectors {
   private sophistication: number;
 
   constructor(sophistication: number) {
-    if (sophistication < 1 || sophistication > 3 || !Number.isInteger(sophistication)) {
-      throw new Error(`sophistication should be an integer between 1 and 3, you gave ${sophistication}`);
+    if (sophistication < 1 || sophistication > 4 || !Number.isInteger(sophistication)) {
+      throw new Error(`sophistication should be an integer between 1 and 4, you gave ${sophistication}`);
     }
     this.sophistication = sophistication;
   }
@@ -29,13 +29,7 @@ export default class SimpleConnectors {
 
   public doConnector(connector: Connector): void {
     connector.resetLineSegments();
-    if (this.sophistication === 1) {
-      this.doLevel1(connector);
-    } else if (this.sophistication === 2) {
-      this.doLevel2(connector);
-    } else {
-      this.doLevel3(connector);
-    }
+    this["doLevel" + this.sophistication](connector);
   }
 
 
@@ -51,6 +45,16 @@ export default class SimpleConnectors {
 
 
   public doLevel2(connector: Connector): void {
+    const v: Vector = Vector.between(connector.getTo().getCentre(), connector.getFrom().getCentre());
+    const   to_dir: Direction = Direction.nearest(v.getBearing());
+    const from_dir: Direction = Direction.nearest(180 + v.getBearing());
+    const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
+    const to_anchor: Point = connector.getTo().getAnchorPoint(to_dir);
+    connector.addLineSegment(new LineSegment(from_anchor, to_anchor, null, to_dir.getAngle() + 180));
+  }
+
+
+  public doLevel3(connector: Connector): void {
     const from_dir: Direction = connector.getFromDirection();
     const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
     const to_dir: Direction = connector.getToDirection();
@@ -59,7 +63,7 @@ export default class SimpleConnectors {
   }
 
 
-  public doLevel3(connector: Connector): void {
+  public doLevel4(connector: Connector): void {
     const from_dir: Direction = connector.getFromDirection();
     const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
     const from_shift: Point = connector.shift(from_anchor, from_dir);
