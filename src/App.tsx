@@ -5,7 +5,7 @@ import AjaxStore from "../../lapis/store/AjaxStore";
 // import _ from "../../lapis/node_modules/@types/underscore/index";
 import Url from "url";
 import Doc from "./Doc";
-import InputGenerator from "./InputGenerator";
+import InputGen from "./InputGen";
 
 
 /* globals window */
@@ -34,19 +34,25 @@ interface Props {}
 
 interface State {
   doc_id: string;
-  block_iterations: number;
-  block_layout: string;
-  block_fd_attraction: number;
-  block_fd_repulsion: number;
-  block_fd_spring_length: number;
-  block_fd_disp_thresh: number;
-  connector_layout: string;
-  connector_sophistication: number;
+  // block_iterations: number;
+  // block_layout: string;
+  // block_fd_attraction: number;
+  // block_fd_repulsion: number;
+  // block_fd_spring_length: number;
+  // block_fd_disp_thresh: number;
+  // connector_layout: string;
+  // connector_sophistication: number;
 }
 
 class App extends React.Component<Props, State> {
-  private input_connector_layout: InputGenerator;
-  private input_connector_sophistication: InputGenerator;
+  private attraction_const: InputGen;
+  private block_layout    : InputGen;
+  private connector_layout: InputGen;
+  private connector_sophis: InputGen;
+  private def_spring_len  : InputGen;
+  private disp_threshold  : InputGen;
+  private max_iterations  : InputGen;
+  private repulsion_const : InputGen;
 
   constructor(props) {
     super(props);
@@ -56,73 +62,16 @@ class App extends React.Component<Props, State> {
       console.log("window.onhashchange event");
       that.hashChange();
     };
-    this.changeAttractionConstant    = this.changeAttractionConstant   .bind(this);
-    this.changeBlockLayout           = this.changeBlockLayout          .bind(this);
-    this.changeDefaultSpringLength   = this.changeDefaultSpringLength  .bind(this);
-    this.changeDisplacementThreshold = this.changeDisplacementThreshold.bind(this);
-    this.changeRepulsionConstant     = this.changeRepulsionConstant    .bind(this);
 
-    this.state = this.makeRepoDocState({
-      block_fd_attraction: ATTRACTION_CONSTANT,
-      block_fd_disp_thresh: MIN_DISPLACEMENT_THRESHOLD,
-      block_fd_repulsion: REPULSION_CONSTANT,
-      block_fd_spring_length: DEFAULT_SPRING_LENGTH,
-      block_iterations: MAX_ITERATIONS,
-      block_layout: "fd",
-      // connector_layout: "sc",
-      // connector_sophistication: 2,
-    });
-    this.input_connector_layout = new InputGenerator(this, "string", "connector_layout", "sc", "Connector Layout");
-    this.input_connector_sophistication = new InputGenerator(this, "number", "connector_sophistication", 1, "Connector Sophistication");
-  }
-
-
-  private changeAttractionConstant(event: any): void {
-    this.setState({
-      block_fd_attraction: App.getNumberFromEvent(event),
-    });
-  }
-
-
-  private changeBlockLayout(event: any): void {
-    this.setState({
-      block_layout: App.getStringFromEvent(event),
-    });
-  }
-
-
-  private changeDefaultSpringLength(event: any): void {
-    this.setState({
-      block_fd_spring_length: App.getNumberFromEvent(event),
-    })
-  }
-
-
-  private changeDisplacementThreshold(event: any): void {
-    this.setState({
-      block_fd_disp_thresh: App.getNumberFromEvent(event),
-    })
-  }
-
-
-  private changeRepulsionConstant(event: any): void {
-    this.setState({
-      block_fd_repulsion: App.getNumberFromEvent(event),
-    })
-  }
-
-
-  private static getNumberFromEvent(event: any): number {
-    let num: number = parseFloat(this.getStringFromEvent(event));
-    if (!Number.isFinite(num)) {
-      num = 0;
-    }
-    return num;
-  }
-
-
-  private static getStringFromEvent(event: any): string {
-    return event && event.target && event.target.value || "";
+    this.state = this.makeRepoDocState();
+    this.attraction_const = new InputGen(this, "number", "attraction_const", ATTRACTION_CONSTANT, "Attraction Constant");
+    this.block_layout     = new InputGen(this, "string", "block_layout", "fd", "Block Layout");
+    this.connector_layout = new InputGen(this, "string", "connector_layout", "sc", "Connector Layout");
+    this.connector_sophis = new InputGen(this, "number", "connector_sophis", 1, "Connector Sophistication");
+    this.disp_threshold   = new InputGen(this, "number", "disp_threshold", MIN_DISPLACEMENT_THRESHOLD, "Min Displacement Threshold");
+    this.def_spring_len   = new InputGen(this, "number", "def_spring_len", DEFAULT_SPRING_LENGTH, "Spring Length");
+    this.max_iterations   = new InputGen(this, "number", "max_iterations", MAX_ITERATIONS, "Maximum Iterations");
+    this.repulsion_const  = new InputGen(this, "number", "repulsion_const", REPULSION_CONSTANT, "Repulsion Constant");
   }
 
 
@@ -151,14 +100,14 @@ class App extends React.Component<Props, State> {
         <Doc
           store={Store}
           docId={this.state.doc_id}
-          blockIterations={this.state.block_iterations}
-          blockLayout={this.state.block_layout}
-          blockFDAttraction={this.state.block_fd_attraction}
-          blockFDRepulsion={this.state.block_fd_repulsion}
-          blockFDSpringLength={this.state.block_fd_spring_length}
-          blockFDDispThresh={this.state.block_fd_disp_thresh}
-          connectorLayout={this.input_connector_layout.getValue()}
-          connectorSophistication={this.input_connector_sophistication.getValue()}
+          blockIterations={this.max_iterations.getValue()}
+          blockLayout={this.block_layout.getValue()}
+          blockFDAttraction={this.attraction_const.getValue()}
+          blockFDRepulsion={this.repulsion_const.getValue()}
+          blockFDSpringLength={this.def_spring_len.getValue()}
+          blockFDDispThresh={this.disp_threshold.getValue()}
+          connectorLayout={this.connector_layout.getValue()}
+          connectorSophistication={this.connector_sophis.getValue()}
         />
         {this.renderForm()}
       </div>
@@ -169,48 +118,14 @@ class App extends React.Component<Props, State> {
   renderForm(): JSX.Element {
     return (
       <form>
-        <span>
-          Block Layout:
-          <input
-            type="text"
-            defaultValue={this.state.block_layout}
-            onBlur={this.changeBlockLayout}
-          />
-        </span>
-        <span>
-          Attraction Constant:
-          <input
-            type="number"
-            defaultValue={String(this.state.block_fd_attraction)}
-            onBlur={this.changeAttractionConstant}
-          />
-        </span>
-        <span>
-          Repulsion Constant:
-          <input
-            type="number"
-            defaultValue={String(this.state.block_fd_repulsion)}
-            onBlur={this.changeRepulsionConstant}
-          />
-        </span>
-        <span>
-          Spring Length:
-          <input
-            type="number"
-            defaultValue={String(this.state.block_fd_spring_length)}
-            onBlur={this.changeDefaultSpringLength}
-          />
-        </span>
-        <span>
-          Min Displacement Threshold:
-          <input
-            type="number"
-            defaultValue={String(this.state.block_fd_disp_thresh)}
-            onBlur={this.changeDisplacementThreshold}
-          />
-        </span>
-        {this.input_connector_layout.getControlBox()}
-        {this.input_connector_sophistication.getControlBox()}
+        {this.attraction_const.getControlBox()}
+        {this.block_layout    .getControlBox()}
+        {this.connector_layout.getControlBox()}
+        {this.connector_sophis.getControlBox()}
+        {this.def_spring_len  .getControlBox()}
+        {this.disp_threshold  .getControlBox()}
+        {this.max_iterations  .getControlBox()}
+        {this.repulsion_const .getControlBox()}
       </form>
     );
   }
