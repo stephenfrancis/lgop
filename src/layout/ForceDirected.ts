@@ -213,7 +213,7 @@ class Node {
     this.edges.forEach((other_node: Node) => {
       const v: Vector = this.calcAttractionForce(other_node,
         this.fd.getDefaultSpringLength());
-      this.force.add(v);
+        this.force = this.force.add(v);
       if (sample) {
         this.outputVectors("attract", v);
       }
@@ -224,22 +224,20 @@ class Node {
   public calcAttractionForce(other_node: Node, spring_length: number): Vector {
     const between: Vector = this.getVectorTo(other_node);
     const proximity: number = Math.max(between.getMagnitude(), 1000);
-    between.setMagnitude(this.fd.getAttractionConstant()
-      * Math.max(proximity - spring_length, 1000));
-    return between;
+    return new Vector(this.fd.getAttractionConstant()
+      * Math.max(proximity - spring_length, 1000), between.getBearing());
   }
 
 
   public calcDisplacement(): number {
-    const v: Vector = Vector.fromOriginTo(this.new_position);
-    v.subtract(Vector.fromOriginTo(this.position));
+    let v: Vector = Vector.fromOriginTo(this.new_position);
+    v = v.subtract(Vector.fromOriginTo(this.position));
     return v.getMagnitude();
   }
 
 
   public calcNewPosition(): void {
-    this.new_position = this.position.clone();
-    this.new_position.add(this.velocity.toPoint());
+    this.new_position = this.position.add(this.velocity.toPoint());
   }
 
 
@@ -247,7 +245,7 @@ class Node {
     this.fd.forEachNode((other_node: Node) => {
       if (other_node !== this) {
         const v: Vector = this.calcRepulsionForce(other_node);
-        this.force.add(v);
+        this.force = this.force.add(v);
         if (sample) {
           this.outputVectors("repulse", v);
         }
@@ -259,8 +257,8 @@ class Node {
   public calcRepulsionForce(other_node: Node): Vector {
     const between: Vector = this.getVectorTo(other_node);
     const proximity: number = Math.max(between.getMagnitude(), 1000);
-    between.setMagnitude(-(this.fd.getRepulsionConstant() / Math.pow(proximity, 2)));
-    return between;
+    return new Vector(-(this.fd.getRepulsionConstant() / Math.pow(proximity, 2)),
+      between.getBearing());
   }
 
 
@@ -271,8 +269,7 @@ class Node {
 
   public getVectorTo(other_node: Node): Vector {
     const v: Vector = Vector.fromOriginTo(other_node.position);
-    v.subtract(Vector.fromOriginTo(this.position));
-    return v;
+    return v.subtract(Vector.fromOriginTo(this.position));
   }
 
 
@@ -297,13 +294,13 @@ class Node {
 
 
   public setBlockPositionFromNode(): void {
-    this.block.getCentre().setTo(this.position);
+    this.block.setCentre(this.position);
     // console.log(`setBlockPositionFromNode() ${this.block}`);
   }
 
 
   public updateVelocity(): void {
-    this.velocity.add(this.force);
+    this.velocity = this.velocity.add(this.force);
   }
 
 }

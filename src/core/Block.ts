@@ -79,6 +79,12 @@ export default class Block {
     return out;
   }
 
+
+  public setCentre(point: Point): void {
+    this.centre = point;
+  }
+
+
   public setHeight(height: number): void {
     this.height = height;
   }

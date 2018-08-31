@@ -2,6 +2,7 @@
 import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 import ILayout from "./ILayout";
+import Point from "../core/Point";
 
 const margin_left: number = 15; // allow for connector paths
 const margin_top: number = 15; // allow for connector paths
@@ -129,7 +130,7 @@ export class Column {
     this.x = new_x + (this.max_width / 2);
     // console.log(`Column.rescale() ${old_x} to ${this.x}`);
     this.blocks.forEach((block: Block) => {
-      block.getCentre().setX(this.x);
+      block.setCentre(new Point(this.x, block.getCentre().getY()));
     });
     return this.max_width;
   }
@@ -167,7 +168,7 @@ export class Row {
     this.y = new_y + (this.max_height / 2);
     // console.log(`Row.rescale() ${old_y} to ${this.y}`);
     this.blocks.forEach((block: Block) => {
-      block.getCentre().setY(this.y);
+      block.setCentre(new Point(block.getCentre().getX(), this.y));
     });
     return this.max_height;
   }

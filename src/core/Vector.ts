@@ -12,24 +12,27 @@ export default class Vector {
   }
 
 
-  public add(other_vector: Vector): void {
+  public add(other_vector: Vector): Vector {
     const ap: Point = this.toPoint();
     const bp: Point = other_vector.toPoint();
-    ap.add(bp);
-    const new_v: Vector = Vector.fromOriginTo(ap);
-    this.setTo(new_v);
+    return Vector.fromOriginTo(ap.add(bp));
   }
 
 
   public static between(a: Point, b: Point): Vector {
     const new_b: Point = b.clone();
-    new_b.subtract(a);
-    return Vector.fromOriginTo(new_b);
+    return Vector.fromOriginTo(new_b.subtract(a));
   }
 
 
   public clone(): Vector {
     return new Vector(this.magnitude, this.bearing);
+  }
+
+
+  public equals(other_vector: Vector): boolean {
+    return (other_vector.getMagnitude() === this.magnitude)
+        && (other_vector.getBearing() === this.bearing);
   }
 
 
@@ -55,28 +58,10 @@ export default class Vector {
   }
 
 
-  public setBearing(bearing: number): void {
-    this.bearing = bearing;
-  }
-
-
-  public setMagnitude(magnitude: number): void {
-    this.magnitude = magnitude;
-  }
-
-
-  public setTo(vector: Vector): void {
-    this.magnitude = vector.getMagnitude();
-    this.bearing   = vector.getBearing();
-  }
-
-
-  public subtract(other_vector: Vector): void {
+  public subtract(other_vector: Vector): Vector {
     const ap: Point = this.toPoint();
     const bp: Point = other_vector.toPoint();
-    ap.subtract(bp);
-    const new_v: Vector = Vector.fromOriginTo(ap);
-    this.setTo(new_v);
+    return Vector.fromOriginTo(ap.subtract(bp));
   }
 
 

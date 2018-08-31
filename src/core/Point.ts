@@ -10,14 +10,18 @@ export default class Point {
   }
 
   // point functioning as a cartesian vector...
-  public add(other_point: Point): void {
-    this.x += other_point.getX();
-    this.y += other_point.getY();
+  public add(other_point: Point): Point {
+    return new Point(this.x + other_point.getX(), this.y + other_point.getY());
   }
 
 
   public clone(): Point {
     return new Point(this.x, this.y);
+  }
+
+
+  public equals(other_point: Point): boolean {
+    return (other_point.getX() === this.x) && (other_point.getY() === this.y);
   }
 
 
@@ -31,27 +35,10 @@ export default class Point {
   }
 
 
-  public setTo(point: Point): void {
-    this.x = point.getX();
-    this.y = point.getY();
+  // point functioning as a cartesian vector...
+  public subtract(other_point: Point): Point {
+    return new Point(this.x - other_point.getX(), this.y - other_point.getY());
   }
-
-
-  public setX(x: number): void {
-    this.x = x;
-  }
-
-
-  public setY(y: number): void {
-    this.y = y;
-  }
-
-
-    // point functioning as a cartesian vector...
-    public subtract(other_point: Point) {
-      this.x -= other_point.getX();
-      this.y -= other_point.getY();
-      }
 
 
   public toString(): string {
@@ -59,4 +46,3 @@ export default class Point {
   }
 
 }
-

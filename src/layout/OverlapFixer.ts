@@ -2,6 +2,7 @@
 import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 import ILayout from "./ILayout";
+import Point from "../core/Point";
 
 
 export default class OverlapFixer implements ILayout {
@@ -113,8 +114,7 @@ class Cell {
 
   private addBlockAndSetCoords(block: Block) {
     this.addBlock(block);
-    block.getCentre().setX(this.x);
-    block.getCentre().setY(this.y);
+    block.setCentre(new Point(this.x, this.y));
   }
 
 

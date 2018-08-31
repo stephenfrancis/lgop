@@ -3,6 +3,7 @@ import Block from "../core/Block";
 import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
 import ILayout from "./ILayout";
+import Point from "../core/Point";
 
 
 const constraints = {
@@ -136,8 +137,9 @@ export default class BellmanFord implements ILayout {
     this.finalize();
     this.diagram.forEachBlock((block: Block) => {
       const name: string = block.getName();
-      block.getCentre().setX(this.vertices[name + ".x"].getDistance());
-      block.getCentre().setY(this.vertices[name + ".y"].getDistance());
+      block.setCentre(new Point(
+        this.vertices[name + ".x"].getDistance(),
+        this.vertices[name + ".y"].getDistance()));
     });
     return false;
   }

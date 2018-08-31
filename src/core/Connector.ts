@@ -27,14 +27,13 @@ export default class Connector {
   }
 
 
-  public amendNewPosition(new_position: Point, fraction: number): void {
+  public amendNewPosition(position: Point, fraction: number): Point {
     if (!this.from_dir) {
       return;
     }
     const delta_x: number = this.from.getCentre().getX() * fraction * this.from_dir.getDeltaCol();
     const delta_y: number = this.from.getCentre().getY() * fraction * this.from_dir.getDeltaRow();
-    new_position.setX(new_position.getX() + delta_x);
-    new_position.setY(new_position.getY() + delta_y);
+    return new Point(position.getX() + delta_x, position.getY() + delta_y);
   }
 
 
