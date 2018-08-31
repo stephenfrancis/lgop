@@ -4,7 +4,7 @@ import * as Uuidv4 from "uuid/v4";
 import Block from "../core/Block";
 import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
-import Direction from "../core/Direction";
+// import Direction from "../core/Direction";
 import Point from "../core/Point";
 import LineSegment from "../core/LineSegment";
 
@@ -23,14 +23,14 @@ export default class SVG {
       return (
         <a href={link_url} key={"anchor_" + elmt_id} title={hover_text}>
           {this.drawRectangle(block.getCentre(), block.getHeight(), block.getWidth())}
-          {this.drawText(block.getCentre(), block.getHeight(), block.getWidth(), block.getName())}
+          {this.drawTextAtCentre(block.getCentre(), block.getHeight(), block.getWidth(), block.getName())}
         </a>
       );
     } else {
       return (
         <g key={"group_" + elmt_id}>
           {this.drawRectangle(block.getCentre(), block.getHeight(), block.getWidth())}
-          {this.drawText(block.getCentre(), block.getHeight(), block.getWidth(), block.getName())}
+          {this.drawTextAtCentre(block.getCentre(), block.getHeight(), block.getWidth(), block.getName())}
         </g>
       );
     }
@@ -87,15 +87,33 @@ export default class SVG {
   }
 
 
-  public drawText(centre: Point, height: number, width: number, text: string): JSX.Element {
+  public drawRect(top_left: Point, bottom_right: Point): JSX.Element {
+    const elmt_id = Uuidv4();
+    return (
+      <rect
+        x={top_left.getX()}
+        y={top_left.getY()}
+        width={bottom_right.getX() - top_left.getX() + 1}
+        height={bottom_right.getY() - top_left.getY() + 1}
+        key={"rect_" + elmt_id} />
+    );
+  }
+
+
+  public drawTextAtCentre(centre: Point, height: number, width: number, text: string): JSX.Element {
     if (!centre) {
       throw new Error(`block centre not defined`);
     }
+    return this.drawText(new Point(centre.getX() - (width / 2), centre.getY() - (height / 2)), text);
+  }
+
+
+  public drawText(top_left: Point, text: string): JSX.Element {
     const elmt_id = Uuidv4();
     return (
       <text
-        x={centre.getX() - (width / 2) + 4}
-        y={centre.getY() - (height / 2) + 16}
+        x={top_left.getX() + 4}
+        y={top_left.getY() + 16}
         key={"text_" + elmt_id}>{text}</text>
     );
   }

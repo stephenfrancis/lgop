@@ -4,10 +4,14 @@ import Point from "../core/Point";
 
 
 export default class CornerStitch  {
+  private all_tiles: Tile[];
+  private total_area: Area;
   private first_tile: Tile;
 
-  constructor() {
-    this.first_tile = new Tile(new Point(0, 0));
+  constructor(bottom_right: Point) {
+    this.all_tiles = [];
+    this.total_area = new Area(new Point(0, 0), bottom_right);
+    this.first_tile = new Tile(this.total_area);
   }
 
 
@@ -22,17 +26,108 @@ export default class CornerStitch  {
   }
 
 
-  public forEachTileInArea(top_left: Point, bottom_right: Point, callback: (tile: Tile) => {}): void {
+  public forEachTileInArea(top_left: Point, bottom_right: Point, callback: (tile: Tile) => void): void {
     const bottom_left: Point = new Point(top_left.getX(), bottom_right.getY());
     this.findTileContaining(bottom_left).forEachTileInArea(top_left, bottom_right, callback);
+  }
+
+
+  public getArea(): Area {
+    return this.total_area;
+  }
+
+
+  public getFirstTile(): Tile {
+    return this.first_tile;
+  }
+
+
+  public static test(): CornerStitch {
+    const cs: CornerStitch = new CornerStitch(new Point(799, 599));
+    const block_tile_1: Tile = new Tile(new Area(new Point(100, 100), new Point(299, 499)), new Block("Block 1"));
+    const block_tile_2: Tile = new Tile(new Area(new Point(500, 200), new Point(599, 699)), new Block("Block 2"));
+
+    const spacer_1 = cs.getFirstTile();
+    spacer_1.setArea(new Area(spacer_1.getArea().getTopLeft(), new Point(799, 99)));
+    block_tile_1.setCornerTileRef("lt", spacer_1);
+    block_tile_1.setCornerTileRef("rt", spacer_1);
+
+    const spacer_2 = new Tile(new Area(new Point(0, 100), new Point(99, 500)));
+    spacer_1.setCornerTileRef("lb", spacer_2);
+    spacer_2.setCornerTileRef("lt", spacer_1);
+    spacer_2.setCornerTileRef("rt", spacer_1);
+    spacer_2.setCornerTileRef("tr", block_tile_1);
+    block_tile_1.setCornerTileRef("tl", spacer_2);
+    spacer_2.setCornerTileRef("br", block_tile_1);
+    block_tile_1.setCornerTileRef("bl", spacer_2);
+
+    const spacer_3 = new Tile(new Area(new Point(300, 100), new Point(799, 199)));
+    spacer_1.setCornerTileRef("rb", spacer_3);
+    spacer_3.setCornerTileRef("rt", spacer_1);
+    spacer_3.setCornerTileRef("lt", spacer_1);
+    spacer_3.setCornerTileRef("tl", block_tile_1);
+    block_tile_1.setCornerTileRef("tr", spacer_3);
+    spacer_3.setCornerTileRef("bl", block_tile_1);
+
+    return cs;
   }
 }
 
 
-export class Tile {
-  private block: Block;
+export class Area {
   private bottom_right: Point;
   private top_left: Point;
+
+  constructor(top_left: Point, bottom_right?: Point) {
+    this.top_left = top_left;
+    this.bottom_right = bottom_right;
+  }
+
+
+  public contains(point: Point): boolean {
+    return (this.top_left    .getX() <= point.getX())
+      &&   (this.top_left    .getY() <= point.getY())
+      &&   (this.bottom_right.getX() >= point.getX())
+      &&   (this.bottom_right.getY() >= point.getY());
+  }
+
+
+  public getBottomRight(): Point {
+    return this.bottom_right;
+  }
+
+
+  public getTopLeft(): Point {
+    return this.top_left;
+  }
+
+
+  public isContainedBy(area: Area): boolean {
+    return (this.top_left    .getX() >= area.getTopLeft()    .getX())
+      &&   (this.top_left    .getY() >= area.getTopLeft()    .getY())
+      &&   (this.bottom_right.getX() <= area.getBottomRight().getX())
+      &&   (this.bottom_right.getY() <= area.getBottomRight().getY());
+  }
+
+
+  public overlaps(area: Area): boolean {
+    return ((this.top_left    .getX() <= area.getBottomRight().getX())
+        ||  (area.getTopLeft().getX() <= this.bottom_right    .getX()))
+      &&   ((this.top_left    .getY() <= area.getBottomRight().getY())
+        ||  (area.getTopLeft().getY() <= this.bottom_right    .getY()));
+  }
+
+
+  public toString(): string {
+    return `${this.getTopLeft()} / ${this.getBottomRight()}`;
+  }
+
+}
+
+
+export class Tile {
+  private area: Area;
+  private block: Block;
   private tl: Tile;
   private tr: Tile;
   private bl: Tile;
@@ -42,29 +137,28 @@ export class Tile {
   private lb: Tile;
   private rb: Tile;
 
-  constructor(top_left: Point, bottom_right?: Point, block?: Block) {
-    this.top_left = top_left;
-    this.bottom_right = bottom_right;
+  constructor(area: Area, block?: Block) {
+    this.area = area;
     this.block = block;
   }
 
 
   public contains(point: Point): boolean {
-    return                      (this.top_left    .getX() <= point.getX())
-      &&                        (this.top_left    .getY() <= point.getY())
-      && (!this.bottom_right || (this.bottom_right.getX() >= point.getX()))
-      && (!this.bottom_right || (this.bottom_right.getY() >= point.getY()));
+    return                      (this.area.getTopLeft()    .getX() <= point.getX())
+      &&                        (this.area.getTopLeft()    .getY() <= point.getY())
+      && (!this.area.getBottomRight() || (this.area.getBottomRight().getX() >= point.getX()))
+      && (!this.area.getBottomRight() || (this.area.getBottomRight().getY() >= point.getY()));
   }
 
 
   public doesAreaContainBlock(top_left: Point, bottom_right: Point): boolean {
     if (this.block) {
       return true;
-    } else if (top_left.getY() < this.top_left.getY()) {
+    } else if (top_left.getY() < this.area.getTopLeft().getY()) {
       return false;
-    } else if (this.tr && (this.tr.top_left.getX() < bottom_right.getX()) && this.tr.block) {
+    } else if (this.tr && (this.tr.area.getTopLeft().getX() < bottom_right.getX()) && this.tr.block) {
       return true;
-    } else if (this.lt && (this.lt.bottom_right.getY() > top_left.getY())) {
+    } else if (this.lt && (this.lt.area.getBottomRight().getY() > top_left.getY())) {
       return this.lt.doesAreaContainBlock(top_left, bottom_right);
     } else {
       return false;
@@ -80,7 +174,7 @@ export class Tile {
   }
 
 
-  private forEachNeighbourAlongSide(start: Tile, end: Tile, dir: string, callback: (tile: Tile) => {}): void {
+  private forEachNeighbourAlongSide(start: Tile, end: Tile, dir: string, callback: (tile: Tile) => void): void {
     let neighbour: Tile = start;
     do {
       callback(neighbour);
@@ -89,19 +183,19 @@ export class Tile {
   }
 
 
-  public forEachTileInArea(top_left: Point, bottom_right: Point, callback: (tile: Tile) => {}): void {
+  public forEachTileInArea(top_left: Point, bottom_right: Point, callback: (tile: Tile) => void): void {
     callback(this);
   }
 
 
   public findTileContaining(point: Point): Tile {
-    if (point.getY() < this.top_left.getY()) {
+    if (point.getY() < this.area.getTopLeft().getY()) {
       return (this.lt && this.lt.findTileContaining(point));
-    } else if (point.getY() > this.bottom_right.getY()) {
+    } else if (point.getY() > this.area.getBottomRight().getY()) {
       return (this.lb && this.lb.findTileContaining(point));
-    } else if (point.getX() < this.top_left.getX()) {
+    } else if (point.getX() < this.area.getTopLeft().getX()) {
       return (this.bl && this.bl.findTileContaining(point));
-    } else if (point.getX() > this.bottom_right.getX()) {
+    } else if (point.getX() > this.area.getBottomRight().getX()) {
       return (this.br && this.br.findTileContaining(point));
     } else {
       return this;
@@ -109,8 +203,8 @@ export class Tile {
   }
 
 
-  public getTopLeft(): Point {
-    return this.top_left;
+  public getArea(): Area {
+    return this.area;
   }
 
 
@@ -119,23 +213,21 @@ export class Tile {
   }
 
 
-  public getBottomRight(): Point {
-    return this.bottom_right;
+  public setArea(area: Area): void {
+    this.area = area;
   }
 
 
-  public setBottomRight(point: Point): void {
-    this.bottom_right = point;
-  }
-
-
-  public setTopLeft(point: Point): void {
-    this.top_left = point;
+  public setCornerTileRef(ref: string, tile: Tile): void {
+    if (!/^[tbrl]{2}$/.exec(ref)) {
+      throw new Error(`invalid corner tile ref: ${ref}`);
+    }
+    this[ref] = tile;
   }
 
 
   public toString(): string {
-    return `{${this.top_left} / ${this.bottom_right}}`;
+    return `{${this.area} / ${this.block || "spacer"}}`;
   }
 
 }
