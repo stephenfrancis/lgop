@@ -20,7 +20,7 @@ export default class DrawCornerStitch {
     const top_left: Point = this.corner_stitch.getArea().getTopLeft();
     const bottom_right: Point = this.corner_stitch.getArea().getBottomRight();
     // iterated separately, to ensure all connectors lie over all blocks
-    this.corner_stitch.forEachTileInArea(top_left, bottom_right, (tile: Tile) => {
+    this.corner_stitch.forEachTile((tile: Tile) => {
       children.push(this.svg.drawRect(tile.getArea().getTopLeft(), tile.getArea().getBottomRight()));
       children.push(this.svg.drawText(tile.getArea().getTopLeft(), tile.toString()));
     });
