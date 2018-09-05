@@ -4,11 +4,46 @@ import Diagram from "../core/Diagram";
 import ILayout from "./ILayout";
 import Point from "../core/Point";
 
-const margin_left: number = 15; // allow for connector paths
-const margin_top: number = 15; // allow for connector paths
-const inter_block_padding_x: number = 30;
-const inter_block_padding_y: number = 30;
 
+interface Profile {
+  margin_left: number;
+  margin_top: number;
+  height: number | "block";
+  id: string;
+  inter_block_padding_x: number;
+  inter_block_padding_y: number;
+  width: number | "block";
+}
+
+const profiles: {[index:string]: Profile} = {
+  svg: {
+    margin_left: 15, // allow for connector paths
+    margin_top: 15, // allow for connector paths
+    height: "block",
+    id: "svg",
+    inter_block_padding_x: 30,
+    inter_block_padding_y: 30,
+    width: "block",
+  },
+  cell: {
+    margin_left: 0,
+    margin_top: 0,
+    height: 1,
+    id: "cell",
+    inter_block_padding_x: 0,
+    inter_block_padding_y: 0,
+    width: 1,
+  },
+  double_cell: {
+    margin_left: 0,
+    margin_top: 0,
+    height: 1,
+    id: "double_cell",
+    inter_block_padding_x: 1,
+    inter_block_padding_y: 1,
+    width: 1,
+  }
+}
 
 export default class Scale implements ILayout {
   private columns: Column[];
@@ -17,14 +52,16 @@ export default class Scale implements ILayout {
   private max_row: number;
   private min_col: number;
   private min_row: number;
+  private profile: any;
 
-  constructor() {
+  constructor(profile?: string) {
     this.columns = [];
     this.rows = [];
     this.max_row = Number.NEGATIVE_INFINITY;
     this.max_col = Number.NEGATIVE_INFINITY;
     this.min_row = Number.POSITIVE_INFINITY;
     this.min_col = Number.POSITIVE_INFINITY;
+    this.setProfile(profile || "svg");
   }
 
 
@@ -64,6 +101,11 @@ export default class Scale implements ILayout {
   }
 
 
+  public getProfile(): any {
+    return this.profile;
+  }
+
+
   private getRow(y: number) {
     if (!this.rows[y]) {
       this.rows[y] = new Row(y);
@@ -80,21 +122,31 @@ export default class Scale implements ILayout {
 
 
   private rescaleColumns(): void {
-    let new_x: number = margin_left;
+    let new_x: number = this.profile.margin_left;
     for (let i = this.min_col; i <= this.max_col; i += 1) {
       if (this.columns[i]) {
-        new_x += this.columns[i].rescale(new_x) + inter_block_padding_x;
+        new_x += this.columns[i].rescale(new_x, this.profile.width)
+          + this.profile.inter_block_padding_x;
       }
     }
   }
 
 
   private rescaleRows(): void {
-    let new_y: number = margin_top;
+    let new_y: number = this.profile.margin_top;
     for (let i = this.min_row; i <= this.max_row; i += 1) {
       if (this.rows[i]) {
-        new_y += this.rows[i].rescale(new_y) + inter_block_padding_y;
+        new_y += this.rows[i].rescale(new_y, this.profile.height)
+          + this.profile.inter_block_padding_y;
       }
+    }
+  }
+
+
+  public setProfile(profile_id: string): void {
+    this.profile = profiles[profile_id];
+    if (!this.profile) {
+      throw new Error(`unrecognized profile: ${profile_id}`);
     }
   }
 
@@ -125,14 +177,17 @@ export class Column {
   }
 
 
-  public rescale(new_x: number): number {
+  public rescale(new_x: number, by: number | "block"): number {
     const old_x: number = this.x;
-    this.x = new_x + (this.max_width / 2);
+    if (by === "block") {
+      by = this.max_width;
+    }
+    this.x = new_x + Math.floor(by / 2);
     // console.log(`Column.rescale() ${old_x} to ${this.x}`);
     this.blocks.forEach((block: Block) => {
       block.setCentre(new Point(this.x, block.getCentre().getY()));
     });
-    return this.max_width;
+    return by;
   }
 
 }
@@ -163,14 +218,17 @@ export class Row {
   }
 
 
-  public rescale(new_y: number): number {
+  public rescale(new_y: number, by: number | "block"): number {
     const old_y: number = this.y;
-    this.y = new_y + (this.max_height / 2);
+    if (by === "block") {
+      by = this.max_height;
+    }
+    this.y = new_y + Math.floor(by / 2);
     // console.log(`Row.rescale() ${old_y} to ${this.y}`);
     this.blocks.forEach((block: Block) => {
       block.setCentre(new Point(block.getCentre().getX(), this.y));
     });
-    return this.max_height;
+    return by;
   }
 
 }

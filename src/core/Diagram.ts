@@ -86,7 +86,7 @@ export default class Diagram {
 
 
   public output(): string {
-    let out = "";
+    let out = `  ${this.getTitle()}\n  ===============\n[${this.getMaxX()}, ${this.getMaxY()}]\n`;
     this.forEachBlock((block) => {
       out += "\n"+ block.output();
     });
