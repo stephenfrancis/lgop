@@ -19,7 +19,7 @@ const of: OverlapFixer = new OverlapFixer();
 of.beginDiagram(diagram);
 while (of.iterate());
 
-const sc: Scale = new Scale("double_cell");
+const sc: Scale = new Scale("cell");
 sc.beginDiagram(diagram);
 while (sc.iterate());
 

@@ -2,15 +2,15 @@
 import Block from "../core/Block";
 import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";
+import Direction from "../core/Direction";
 import ILayout from "./ILayout";
 import LineSegment from "../core/LineSegment";
 import Point from "../core/Point";
 
-const margin_left: number = 15; // allow for connector paths
-const margin_top: number = 15; // allow for connector paths
-const inter_block_padding_x: number = 30;
-const inter_block_padding_y: number = 30;
 
+const pad = function (str, num) {
+  return (" ").repeat(Math.max(num - str.length, 0)) + str;
+}
 
 export default class Lee implements ILayout {
   private cells: Cell[][];
@@ -69,10 +69,24 @@ export default class Lee implements ILayout {
 
 
   private doConnector(connector: Connector): void {
-    const [fr_x, fr_y] = this.getBlockCoordinates(connector.getFrom());
-    const [to_x, to_y] = this.getBlockCoordinates(connector.getTo());
+    let [fr_x, fr_y] = this.getBlockCoordinates(connector.getFrom());
+    fr_x += connector.getFromDirection().getDeltaCol();
+    fr_y += connector.getFromDirection().getDeltaRow();
+    let [to_x, to_y] = this.getBlockCoordinates(connector.getTo());
+    to_x += connector.getToDirection().getDeltaCol();
+    to_y += connector.getToDirection().getDeltaRow();
     this.resetScores();
-    this.makeCellAt(fr_x, fr_y + 1).workOut(this, this.makeCellAt(to_x - 1, to_y));
+    const corner_points: Point[] = this.makeCellAt(fr_x, fr_y)
+      .workOut(this, this.makeCellAt(to_x, to_y),
+      connector.getToDirection().toString().charAt(0));
+    let prev_point: Point = null;
+    corner_points.forEach((point: Point) => {
+      if (prev_point) {
+        connector.addLineSegment(new LineSegment(prev_point, point));
+      }
+      prev_point = point;
+    });
+    this.output();
   }
 
 
@@ -80,6 +94,13 @@ export default class Lee implements ILayout {
     const x: number = block.getCentre().getX() * 2;
     const y: number = block.getCentre().getY() * 2;
     return [x, y];
+  }
+
+
+  public getMaxRadius(): number {
+    return Math.ceil(Math.sqrt(
+        Math.pow(this.max_x - this.min_x + 1, 2)
+      + Math.pow(this.max_y - this.min_y + 1, 2)));
   }
 
 
@@ -138,15 +159,27 @@ export default class Lee implements ILayout {
 
 
   public output(): void {
+    const lines: string[] = [];
     for (let x = this.min_x; x <= this.max_x; x += 1) {
-      if (this.cells[x]) {
-        let str: string = `${x}-- `;
-        this.loopOverCellsY(x, (cell: Cell) => {
-          const text: string = String(cell.getScore());
-          str += ("     ").substr(text.length) + text;
-        });
-        console.log(str);
+      lines[x] = pad(x.toFixed(0), 5) + ": ";
+      this.cells[x] = this.cells[x] || [];
+      for (let y = this.min_y; y <= this.max_y; y += 1) {
+        if (this.cells[x][y]) {
+          const score: number = this.cells[x][y].getScore();
+          if (score !== null) {
+            lines[x] += pad(score.toFixed(0), 3);
+          } else if (this.cells[x][y].getBlock()) {
+            lines[x] += " []";
+          } else {
+            lines[x] += " - ";
+          }
+        } else {
+          lines[x] +=  " . ";
+        }
       }
+    }
+    for (let x = this.min_x; x <= this.max_x; x += 1) {
+      console.log(lines[x]);
     }
   }
 
@@ -173,13 +206,13 @@ const delta = {
 }
 
 class Cell {
-  private blocks: Block[];
+  private block: Block;
   private score: number;
   private x: number;
   private y: number;
 
   constructor(x: number, y: number) {
-    this.blocks = [];
+    this.block = null;
     this.score = null;
     this.x = x;
     this.y = y;
@@ -187,7 +220,15 @@ class Cell {
 
 
   public addBlock(block: Block): void {
-    this.blocks.push(block);
+    if (this.block) {
+      throw new Error(`only one block allowed per cell`);
+    }
+    this.block = block;
+  }
+
+
+  public getBlock(): Block {
+    return this.block;
   }
 
 
@@ -202,19 +243,16 @@ class Cell {
 
 
   public toString(): string {
-    return `${this.x}, ${this.y} - ${this.score}`;
+    return `${this.x}, ${this.y} - ${this.score || this.block || "[space]"}`;
   }
 
 
-  public workBack(lee: Lee, origin: Cell, dir: string, corner_points: [number, number][]): void {
+  public workBack(lee: Lee, proc: any): Cell {
     // console.log(`workBack() ${this}`);
-    if (this === origin) {
-      // console.log(`finished!`);
-      return;
-    }
     let score: number = Number.POSITIVE_INFINITY;
     let best_neigbour: Cell = null;
     let new_dir: string = null;
+
     const checkNeighbour = (dir: string) => {
       const cell: Cell = lee.makeCellAtWithinBounds(this.x + delta[dir].x, this.y + delta[dir].y);
       if (!cell) {
@@ -227,51 +265,68 @@ class Cell {
         new_dir = dir;
       }
     }
-    checkNeighbour(dir);
-    checkNeighbour(delta[dir].left);
-    checkNeighbour(delta[dir].right);
+
+    checkNeighbour(proc.dir);
+    checkNeighbour(delta[proc.dir].left);
+    checkNeighbour(delta[proc.dir].right);
     if (!best_neigbour) {
       throw new Error(`workBack() failed`);
     }
-    if (dir !== new_dir) {
-      corner_points.push([this.x, this.y]);
+    if (proc.dir !== new_dir) {
+      proc.corner_points.push(new Point(this.x, this.y));
     }
-    best_neigbour.workBack(lee, origin, new_dir, corner_points);
+    proc.dir = new_dir;
+    return best_neigbour;
   }
 
 
-  public workOut(lee: Lee, target: Cell): void {
-    console.log(`workOut() ${lee} ${this} ${this.blocks[0]} ${target} ${this.score} ${this.blocks.length}`);
+  public workOut(lee: Lee, target: Cell, to_dir: string): Point[] {
+    // console.log(`workOut() ${this} ${target} ${this.score} ${this.block}`);
     this.score = 0;
     this.workOutCellAtPosition(lee);
-    for (let i: number = 1; i < 50; i += 1) {
+    for (let i: number = 1; i < lee.getMaxRadius(); i += 1) {
       this.workOutAtRadius(lee, i);
     }
-    const corner_points: [number, number][] = [];
-    target.workBack(lee, this, 'W', corner_points);
-    console.log(`line segments: ${JSON.stringify(corner_points)}`);
+    const corner_points: Point[] = [];
+    const proc: any = {
+      corner_points,
+      counter: 0,
+      dir: to_dir,
+    };
+    corner_points.push(new Point(target.x, target.y));
+    let next_cell: Cell = target;
+    while (next_cell !== this && proc.counter < 100) {
+      next_cell = next_cell.workBack(lee, proc);
+      proc.counter += 1;
+    }
+    corner_points.push(new Point(this.x, this.y));
+    console.log(`line segments: ${JSON.stringify(corner_points)} ${proc.counter}`);
+    return corner_points;
   }
 
 
   public workOutAtRadius(lee: Lee, radius: number): void {
+    // console.log(`workOutAtRadius() ${this.x}, ${this.y} radius: ${radius}`);
     let x: number = this.x - radius;
     let y: number = this.y;
-    while (x <= this.x) {
+    while (x < this.x) {
+      // console.log(`workOutAtRadius() NE ${x} <= ${this.x}, ${y} ${this.y}`);
       this.workOutCell(lee, x, y);
       x += 1;
       y -= 1;
     }
-    while (y <= this.y) {
+    while (y < this.y) {
+      // console.log(`workOutAtRadius() SE ${x} ${this.x}, ${y} <= ${this.y}`);
       this.workOutCell(lee, x, y);
       x += 1;
       y += 1;
     }
-    while (x >= this.x) {
+    while (x > this.x) {
       this.workOutCell(lee, x, y);
       x -= 1;
       y += 1;
     }
-    while (y >= this.y) {
+    while (y > this.y) {
       this.workOutCell(lee, x, y);
       x -= 1;
       y -= 1;
@@ -282,7 +337,7 @@ class Cell {
   public workOutCell(lee: Lee, x: number, y: number): void {
     const cell: Cell = lee.makeCellAtWithinBounds(x, y);
     // console.log(`workOutCell() [${x}, ${y}] ${cell}`);
-    if (cell && cell.blocks.length === 0 && typeof cell.score === "number") {
+    if (cell && !cell.block && typeof cell.score === "number") {
       cell.workOutCellAtPosition(lee);
     }
   }
@@ -291,7 +346,7 @@ class Cell {
   private workOutCellAtPosition(lee) {
     const doNeighbour = (dir: string) => {
       const cell: Cell = lee.makeCellAtWithinBounds(this.x + delta[dir].x, this.y + delta[dir].y);
-      if (cell && cell.score === null && cell.blocks.length === 0) {
+      if (cell && cell.score === null && !cell.block) {
         cell.score = this.score + 1;
       }
     }
