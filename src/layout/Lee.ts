@@ -6,6 +6,7 @@ import Direction from "../core/Direction";
 import ILayout from "./ILayout";
 import LineSegment from "../core/LineSegment";
 import Point from "../core/Point";
+import Vector from "../core/Vector";
 
 
 const pad = function (str, num) {
@@ -36,15 +37,15 @@ export default class Lee implements ILayout {
     diagram.forEachBlock((block: Block) => {
       this.addBlock(block);
     });
-    console.log(`beginDiagram() blocks loaded: ${this}`);
-    let i: number = 0;
+    // console.log(`beginDiagram() blocks loaded: ${this}`);
+    // let i: number = 0;
     diagram.forEachBlock((block: Block) => {
-      if (i === 0) {
+      // if (i === 0) {
         this.doBlock(block);
-      }
+      // }
       // i += 1;
     });
-    console.log(`beginDiagram() blocks done: ${this}`);
+    // console.log(`beginDiagram() blocks done: ${this}`);
   }
 
 
@@ -58,41 +59,45 @@ export default class Lee implements ILayout {
 
 
   private doBlock(block: Block): void {
-    let i: number = 0;
+    // let i: number = 0;
     block.getConnectors().forEach((connector: Connector) => {
-      if (i === 0) {
+      // if (i === 0) {
         this.doConnector(connector);
-      }
+      // }
       // i += 1;
     });
   }
 
 
   private doConnector(connector: Connector): void {
+    const from_dir: Direction = connector.getFromDirection();
     let [fr_x, fr_y] = this.getBlockCoordinates(connector.getFrom());
-    fr_x += connector.getFromDirection().getDeltaCol();
-    fr_y += connector.getFromDirection().getDeltaRow();
+    fr_x += from_dir.getDeltaCol();
+    fr_y += from_dir.getDeltaRow();
+
+    const to_dir: Direction = connector.getToDirection();
     let [to_x, to_y] = this.getBlockCoordinates(connector.getTo());
-    to_x += connector.getToDirection().getDeltaCol();
-    to_y += connector.getToDirection().getDeltaRow();
+    to_x +=   to_dir.getDeltaCol();
+    to_y +=   to_dir.getDeltaRow();
+
     this.resetScores();
     const corner_points: Point[] = this.makeCellAt(fr_x, fr_y)
       .workOut(this, this.makeCellAt(to_x, to_y),
       connector.getToDirection().toString().charAt(0));
     let prev_point: Point = null;
-    corner_points.forEach((point: Point) => {
+    corner_points.reverse().forEach((point: Point) => {
       if (prev_point) {
         connector.addLineSegment(new LineSegment(prev_point, point));
       }
       prev_point = point;
     });
-    this.output();
+    console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
   }
 
 
   private getBlockCoordinates(block: Block): [number, number] {
-    const x: number = block.getCentre().getX() * 2;
-    const y: number = block.getCentre().getY() * 2;
+    const x: number = block.getCentre().getX();
+    const y: number = block.getCentre().getY();
     return [x, y];
   }
 
@@ -300,7 +305,7 @@ class Cell {
       proc.counter += 1;
     }
     corner_points.push(new Point(this.x, this.y));
-    console.log(`line segments: ${JSON.stringify(corner_points)} ${proc.counter}`);
+    // console.log(`line segments: ${JSON.stringify(corner_points)} ${proc.counter}`);
     return corner_points;
   }
 

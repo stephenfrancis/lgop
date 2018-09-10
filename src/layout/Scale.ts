@@ -3,6 +3,7 @@ import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 import ILayout from "./ILayout";
 import Point from "../core/Point";
+import LineSegment from "../core/LineSegment";
 
 
 interface Profile {
@@ -65,35 +66,46 @@ export default class Scale implements ILayout {
   }
 
 
-  private addBlock(block: Block) {
+  private addBlock(block: Block): void {
     const x: number = block.getCentre().getX();
     const y: number = block.getCentre().getY();
-    if (x < this.min_col) {
-      this.min_col = x;
-    }
-    if (y < this.min_row) {
-      this.min_row = y;
-    }
-    if (x > this.max_col) {
-      this.max_col = x;
-    }
-    if (y > this.max_row) {
-      this.max_row = y;
-    }
     // console.log(`Scale.addBlock() adding ${block} to Col ${x} and Row ${y}`);
-    this.getRow(y).add(block);
-    this.getColumn(x).add(block);
+    this.getRow(y)   .addBlock(block);
+    this.getColumn(x).addBlock(block);
   }
 
 
-  public beginDiagram(diagram: Diagram) {
+  public addConnectors(block: Block): void {
+    block.getConnectors().forEach(connector => {
+      connector.forEachLineSegment((line: LineSegment) => {
+        this.addLineTerm(line, line.getFrom(), "from");
+        this.addLineTerm(line, line.getTo()  , "to");
+      });
+    });
+  }
+
+
+  public addLineTerm(line: LineSegment, point: Point, which: "from" | "to"): void {
+    this.getRow   (point.getY()).addLineTerm(line, which);
+    this.getColumn(point.getX()).addLineTerm(line, which);
+  }
+
+
+  public beginDiagram(diagram: Diagram): void {
     diagram.forEachBlock((block: Block) => {
       this.addBlock(block);
+      this.addConnectors(block);
     });
   }
 
 
   private getColumn(x: number): Column {
+    if (x < this.min_col) {
+      this.min_col = x;
+    }
+    if (x > this.max_col) {
+      this.max_col = x;
+    }
     if (!this.columns[x]) {
       this.columns[x] = new Column(x);
     }
@@ -106,7 +118,13 @@ export default class Scale implements ILayout {
   }
 
 
-  private getRow(y: number) {
+  private getRow(y: number): Row {
+    if (y < this.min_row) {
+      this.min_row = y;
+    }
+    if (y > this.max_row) {
+      this.max_row = y;
+    }
     if (!this.rows[y]) {
       this.rows[y] = new Row(y);
     }
@@ -154,21 +172,30 @@ export default class Scale implements ILayout {
 
 
 export class Column {
+  private blocks: Block[];
+  private lines_from: LineSegment[];
+  private lines_to  : LineSegment[];
   private max_width: number;
   private x: number;
-  private blocks: Block[];
 
   constructor(x: number) {
     this.x = x;
     this.max_width = 0;
     this.blocks = [];
+    this.lines_from = [];
+    this.lines_to   = [];
   }
 
-  public add(block: Block): void {
+  public addBlock(block: Block): void {
     this.blocks.push(block);
     if (block.getWidth() > this.max_width) {
       this.max_width = block.getWidth();
     }
+  }
+
+
+  public addLineTerm(line: LineSegment, which: "from" | "to"): void {
+    this["lines_" + which].push(line);
   }
 
 
@@ -187,6 +214,12 @@ export class Column {
     this.blocks.forEach((block: Block) => {
       block.setCentre(new Point(this.x, block.getCentre().getY()));
     });
+    this.lines_from.forEach((line: LineSegment) => {
+      line.setFrom(new Point(this.x, line.getFrom().getY()))
+    });
+    this.lines_to  .forEach((line: LineSegment) => {
+      line.setTo  (new Point(this.x, line.getTo  ().getY()))
+    });
     return by;
   }
 
@@ -194,22 +227,31 @@ export class Column {
 
 
 export class Row {
+  private blocks: Block[];
+  private lines_from: LineSegment[];
+  private lines_to  : LineSegment[];
   private max_height: number;
   private y: number;
-  private blocks: Block[];
 
   constructor(y: number) {
     this.y = y;
     this.max_height = 0;
     this.blocks = [];
+    this.lines_from = [];
+    this.lines_to   = [];
   }
 
 
-  public add(block: Block): void {
+  public addBlock(block: Block): void {
     this.blocks.push(block);
     if (block.getHeight() > this.max_height) {
       this.max_height = block.getHeight();
     }
+  }
+
+
+  public addLineTerm(line: LineSegment, which: "from" | "to"): void {
+    this["lines_" + which].push(line);
   }
 
 
@@ -227,6 +269,12 @@ export class Row {
     // console.log(`Row.rescale() ${old_y} to ${this.y}`);
     this.blocks.forEach((block: Block) => {
       block.setCentre(new Point(block.getCentre().getX(), this.y));
+    });
+    this.lines_from.forEach((line: LineSegment) => {
+      line.setFrom(new Point(line.getFrom().getX(), this.y))
+    });
+    this.lines_to  .forEach((line: LineSegment) => {
+      line.setTo  (new Point(line.getTo  ().getX(), this.y))
     });
     return by;
   }
