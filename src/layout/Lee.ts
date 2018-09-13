@@ -37,15 +37,9 @@ export default class Lee implements ILayout {
     diagram.forEachBlock((block: Block) => {
       this.addBlock(block);
     });
-    // console.log(`beginDiagram() blocks loaded: ${this}`);
-    // let i: number = 0;
     diagram.forEachBlock((block: Block) => {
-      // if (i === 0) {
-        this.doBlock(block);
-      // }
-      // i += 1;
+      this.doBlock(block);
     });
-    // console.log(`beginDiagram() blocks done: ${this}`);
   }
 
 
@@ -59,17 +53,14 @@ export default class Lee implements ILayout {
 
 
   private doBlock(block: Block): void {
-    // let i: number = 0;
+    // const report: boolean = (block.getName().indexOf("Now THIS Is My Kind") === 0);
     block.getConnectors().forEach((connector: Connector) => {
-      // if (i === 0) {
-        this.doConnector(connector);
-      // }
-      // i += 1;
+      this.doConnector(connector, false);
     });
   }
 
 
-  private doConnector(connector: Connector): void {
+  private doConnector(connector: Connector, report: boolean): void {
     const from_dir: Direction = connector.getFromDirection();
     let [fr_x, fr_y] = this.getBlockCoordinates(connector.getFrom());
     fr_x += from_dir.getDeltaCol();
@@ -83,7 +74,7 @@ export default class Lee implements ILayout {
     this.resetScores();
     const corner_points: Point[] = this.makeCellAt(fr_x, fr_y)
       .workOut(this, this.makeCellAt(to_x, to_y),
-      connector.getToDirection().toString().charAt(0));
+        connector.getToDirection().toString().charAt(0), report);
     let prev_point: Point = null;
     corner_points.reverse().forEach((point: Point) => {
       if (prev_point) {
@@ -91,7 +82,10 @@ export default class Lee implements ILayout {
       }
       prev_point = point;
     });
-    console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
+    if (report) {
+      this.output();
+      console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
+    }
   }
 
 
@@ -163,28 +157,34 @@ export default class Lee implements ILayout {
   }
 
 
-  public output(): void {
+  public output(what?: string): void {
+    what = what || "score";
+    let header: string = "       ";
     const lines: string[] = [];
+    for (let y = this.min_y; y <= this.max_y; y += 1) {
+      lines[y] = pad(y.toFixed(0), 5) + ": ";
+    }
     for (let x = this.min_x; x <= this.max_x; x += 1) {
-      lines[x] = pad(x.toFixed(0), 5) + ": ";
+      header += pad(x.toFixed(0), 3);
       this.cells[x] = this.cells[x] || [];
       for (let y = this.min_y; y <= this.max_y; y += 1) {
         if (this.cells[x][y]) {
-          const score: number = this.cells[x][y].getScore();
+          const score: number = this.cells[x][y].getVal(what);
           if (score !== null) {
-            lines[x] += pad(score.toFixed(0), 3);
+            lines[y] += pad(score.toFixed(0), 3);
           } else if (this.cells[x][y].getBlock()) {
-            lines[x] += " []";
+            lines[y] += " []";
           } else {
-            lines[x] += " - ";
+            lines[y] += " - ";
           }
         } else {
-          lines[x] +=  " . ";
+          lines[y] +=  " . ";
         }
       }
     }
-    for (let x = this.min_x; x <= this.max_x; x += 1) {
-      console.log(lines[x]);
+    console.log(header);
+    for (let y = this.min_y; y <= this.max_y; y += 1) {
+      console.log(lines[y]);
     }
   }
 
@@ -212,6 +212,8 @@ const delta = {
 
 class Cell {
   private block: Block;
+  private lines_horiz: number;
+  private lines_vert : number;
   private score: number;
   private x: number;
   private y: number;
@@ -219,6 +221,8 @@ class Cell {
   constructor(x: number, y: number) {
     this.block = null;
     this.score = null;
+    this.lines_horiz = 0;
+    this.lines_vert  = 0;
     this.x = x;
     this.y = y;
   }
@@ -234,6 +238,11 @@ class Cell {
 
   public getBlock(): Block {
     return this.block;
+  }
+
+
+  public getVal(what: string): number {
+    return this[what];
   }
 
 
@@ -258,13 +267,19 @@ class Cell {
     let best_neigbour: Cell = null;
     let new_dir: string = null;
 
+    if (proc.dir === "N" || proc.dir === "S") {
+      this.lines_vert += 1;
+    } else {
+      this.lines_horiz += 1;
+    }
+
     const checkNeighbour = (dir: string) => {
       const cell: Cell = lee.makeCellAtWithinBounds(this.x + delta[dir].x, this.y + delta[dir].y);
       if (!cell) {
         return;
       }
       let cell_score = cell.getScore();
-      if (cell_score < score) {
+      if (Number.isFinite(cell_score) && cell_score < score) {
         score = cell_score;
         best_neigbour = cell;
         new_dir = dir;
@@ -285,7 +300,7 @@ class Cell {
   }
 
 
-  public workOut(lee: Lee, target: Cell, to_dir: string): Point[] {
+  public workOut(lee: Lee, target: Cell, to_dir: string, report: boolean): Point[] {
     // console.log(`workOut() ${this} ${target} ${this.score} ${this.block}`);
     this.score = 0;
     this.workOutCellAtPosition(lee);

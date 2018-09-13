@@ -43,6 +43,15 @@ const profiles: {[index:string]: Profile} = {
     inter_block_padding_x: 1,
     inter_block_padding_y: 1,
     width: 1,
+  },
+  triple_cell: {
+    margin_left: 1,
+    margin_top: 1,
+    height: 1,
+    id: "double_cell",
+    inter_block_padding_x: 2,
+    inter_block_padding_y: 2,
+    width: 1,
   }
 }
 

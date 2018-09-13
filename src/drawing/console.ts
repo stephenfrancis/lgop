@@ -38,7 +38,7 @@ while (s2.iterate());
 const fc: FinishConnectors = new FinishConnectors();
 fc.layoutDiagram(diagram);
 
-// console.log(le.output());
+// console.log(le.output("lines_vert"));
 
 // console.log(diagram.output());
 
