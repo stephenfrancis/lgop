@@ -1,9 +1,13 @@
 
+import Point from "./Point";
+
+
 export default class Direction {
   private id: string;
   private ang: number;
   private drow: number;
   private dcol: number;
+  private dunit: Point;
   private dz: number;
   private static directions: { [index: string]: Direction, } = {};
   private static ordered: Array<Direction> = [];
@@ -13,6 +17,7 @@ export default class Direction {
     this.ang = ang;
     this.drow = drow;
     this.dcol = dcol;
+    this.dunit = new Point(dcol, drow);
     this.dz = dz;
     Direction.directions[id] = this;
     Direction.ordered.push(this);
@@ -73,6 +78,11 @@ export default class Direction {
 
   public getDeltaRow(): number {
     return this.drow;
+  }
+
+
+  public getDeltaUnit(): Point {
+    return this.dunit;
   }
 
 

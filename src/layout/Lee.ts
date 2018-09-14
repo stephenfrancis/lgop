@@ -26,8 +26,7 @@ export default class Lee implements ILayout {
 
 
   public addBlock(block: Block): void {
-    const [x, y] = this.getBlockCoordinates(block);
-    const cell: Cell = this.makeCellAt(x, y);
+    const cell: Cell = this.makeCellAt(block.getCentre());
     cell.addBlock(block);
   }
 
@@ -62,18 +61,14 @@ export default class Lee implements ILayout {
 
   private doConnector(connector: Connector, report: boolean): void {
     const from_dir: Direction = connector.getFromDirection();
-    let [fr_x, fr_y] = this.getBlockCoordinates(connector.getFrom());
-    fr_x += from_dir.getDeltaCol();
-    fr_y += from_dir.getDeltaRow();
+    const fr_p: Point = connector.getFrom().getCentre().add(from_dir.getDeltaUnit());
 
     const to_dir: Direction = connector.getToDirection();
-    let [to_x, to_y] = this.getBlockCoordinates(connector.getTo());
-    to_x +=   to_dir.getDeltaCol();
-    to_y +=   to_dir.getDeltaRow();
+    const to_p: Point = connector.getTo()  .getCentre().add(  to_dir.getDeltaUnit());
 
     this.resetScores();
-    const corner_points: Point[] = this.makeCellAt(fr_x, fr_y)
-      .workOut(this, this.makeCellAt(to_x, to_y),
+    const corner_points: Point[] = this.makeCellAt(fr_p)
+      .workOut(this, this.makeCellAt(to_p),
         connector.getToDirection().toString().charAt(0), report);
     let prev_point: Point = null;
     corner_points.reverse().forEach((point: Point) => {
@@ -86,13 +81,6 @@ export default class Lee implements ILayout {
       this.output();
       console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
     }
-  }
-
-
-  private getBlockCoordinates(block: Block): [number, number] {
-    const x: number = block.getCentre().getX();
-    const y: number = block.getCentre().getY();
-    return [x, y];
   }
 
 
@@ -126,7 +114,9 @@ export default class Lee implements ILayout {
   }
 
 
-  public makeCellAt(x: number, y: number): Cell {
+  public makeCellAt(point: Point): Cell {
+    const x: number = point.getX();
+    const y: number = point.getY();
     if (x < this.min_x) {
       this.min_x = x;
     }
@@ -143,17 +133,19 @@ export default class Lee implements ILayout {
       this.cells[x] = [];
     }
     if (!this.cells[x][y]) {
-      this.cells[x][y] = new Cell(x, y);
+      this.cells[x][y] = new Cell(point);
     }
     return this.cells[x][y];
   }
 
 
-  public makeCellAtWithinBounds(x: number, y: number): Cell {
+  public makeCellAtWithinBounds(point: Point): Cell {
+    const x: number = point.getX();
+    const y: number = point.getY();
     if (x < this.min_x || x > this.max_x || y < this.min_y || y > this.max_y) {
       return null;
     }
-    return this.makeCellAt(x, y);
+    return this.makeCellAt(point);
   }
 
 
@@ -204,27 +196,25 @@ export default class Lee implements ILayout {
 
 
 const delta = {
-  N: { x:  0, y: -1, left: "W", right: "E", },
-  E: { x:  1, y:  0, left: "N", right: "S", },
-  S: { x:  0, y:  1, left: "E", right: "W", },
-  W: { x: -1, y:  0, left: "S", right: "N", },
+  N: { p: new Point( 0, -1), x:  0, y: -1, left: "W", right: "E", },
+  E: { p: new Point( 1,  0), x:  1, y:  0, left: "N", right: "S", },
+  S: { p: new Point( 0,  1), x:  0, y:  1, left: "E", right: "W", },
+  W: { p: new Point(-1,  0), x: -1, y:  0, left: "S", right: "N", },
 }
 
 class Cell {
   private block: Block;
   private lines_horiz: number;
   private lines_vert : number;
+  private point: Point;
   private score: number;
-  private x: number;
-  private y: number;
 
-  constructor(x: number, y: number) {
+  constructor(point: Point) {
     this.block = null;
     this.score = null;
     this.lines_horiz = 0;
     this.lines_vert  = 0;
-    this.x = x;
-    this.y = y;
+    this.point = point;
   }
 
 
@@ -257,7 +247,7 @@ class Cell {
 
 
   public toString(): string {
-    return `${this.x}, ${this.y} - ${this.score || this.block || "[space]"}`;
+    return `${this.point} - ${this.score || this.block || "[space]"}`;
   }
 
 
@@ -274,7 +264,7 @@ class Cell {
     }
 
     const checkNeighbour = (dir: string) => {
-      const cell: Cell = lee.makeCellAtWithinBounds(this.x + delta[dir].x, this.y + delta[dir].y);
+      const cell: Cell = lee.makeCellAtWithinBounds(this.point.add(delta[dir].p));
       if (!cell) {
         return;
       }
@@ -293,7 +283,7 @@ class Cell {
       throw new Error(`workBack() failed`);
     }
     if (proc.dir !== new_dir) {
-      proc.corner_points.push(new Point(this.x, this.y));
+      proc.corner_points.push(this.point);
     }
     proc.dir = new_dir;
     return best_neigbour;
@@ -313,13 +303,13 @@ class Cell {
       counter: 0,
       dir: to_dir,
     };
-    corner_points.push(new Point(target.x, target.y));
+    corner_points.push(target.point);
     let next_cell: Cell = target;
     while (next_cell !== this && proc.counter < 100) {
       next_cell = next_cell.workBack(lee, proc);
       proc.counter += 1;
     }
-    corner_points.push(new Point(this.x, this.y));
+    corner_points.push(this.point);
     // console.log(`line segments: ${JSON.stringify(corner_points)} ${proc.counter}`);
     return corner_points;
   }
@@ -327,26 +317,26 @@ class Cell {
 
   public workOutAtRadius(lee: Lee, radius: number): void {
     // console.log(`workOutAtRadius() ${this.x}, ${this.y} radius: ${radius}`);
-    let x: number = this.x - radius;
-    let y: number = this.y;
-    while (x < this.x) {
+    let x: number = this.point.getX() - radius;
+    let y: number = this.point.getY();
+    while (x < this.point.getX()) {
       // console.log(`workOutAtRadius() NE ${x} <= ${this.x}, ${y} ${this.y}`);
       this.workOutCell(lee, x, y);
       x += 1;
       y -= 1;
     }
-    while (y < this.y) {
+    while (y < this.point.getY()) {
       // console.log(`workOutAtRadius() SE ${x} ${this.x}, ${y} <= ${this.y}`);
       this.workOutCell(lee, x, y);
       x += 1;
       y += 1;
     }
-    while (x > this.x) {
+    while (x > this.point.getX()) {
       this.workOutCell(lee, x, y);
       x -= 1;
       y += 1;
     }
-    while (y > this.y) {
+    while (y > this.point.getY()) {
       this.workOutCell(lee, x, y);
       x -= 1;
       y -= 1;
@@ -355,7 +345,7 @@ class Cell {
 
 
   public workOutCell(lee: Lee, x: number, y: number): void {
-    const cell: Cell = lee.makeCellAtWithinBounds(x, y);
+    const cell: Cell = lee.makeCellAtWithinBounds(new Point(x, y));
     // console.log(`workOutCell() [${x}, ${y}] ${cell}`);
     if (cell && !cell.block && typeof cell.score === "number") {
       cell.workOutCellAtPosition(lee);
@@ -365,7 +355,7 @@ class Cell {
 
   private workOutCellAtPosition(lee) {
     const doNeighbour = (dir: string) => {
-      const cell: Cell = lee.makeCellAtWithinBounds(this.x + delta[dir].x, this.y + delta[dir].y);
+      const cell: Cell = lee.makeCellAtWithinBounds(this.point.add(delta[dir].p));
       if (cell && cell.score === null && !cell.block) {
         cell.score = this.score + 1;
       }
