@@ -3,11 +3,11 @@ import * as React from "react";
 import AjaxStore from "../../lapis/store/AjaxStore";
 import Diagram from "./core/Diagram";
 import ForceDirected from "./layout/ForceDirected";
+import LayoutConnectors from "./layout/LayoutConnectors";
 import MapLoader from "./loaders/MapLoader";
 import BellmanFord from "./layout/BellmanFord";
 import OverlapFixer from "./layout/OverlapFixer";
 import Scale from "./layout/Scale";
-import SimpleConnectors from "./layout/SimpleConnectors";
 import SVG from "./drawing/SVG";
 
 
@@ -125,8 +125,9 @@ export default class Doc extends React.Component<Props, State> {
 
 
   renderReady() {
-    const sc: SimpleConnectors = new SimpleConnectors(this.props.connectorSophistication);
-    sc.layoutDiagram(this.state.diagram);
+    const lc: LayoutConnectors = new LayoutConnectors(this.props.connectorSophistication);
+    lc.beginDiagram(this.state.diagram);
+    while (lc.iterate());
     const svg: SVG = new SVG();
 
     return (

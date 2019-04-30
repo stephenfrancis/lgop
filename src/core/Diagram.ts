@@ -1,5 +1,6 @@
 
 import Block from "./Block";
+import Connector from "./Connector";
 
 export enum State {
   AddingData,
@@ -27,6 +28,28 @@ export default class Diagram {
       throw new Error(`a block with name ${name} already exists in this diagram`);
     }
     this.blocks[name] = block;
+  }
+
+
+  public copy(): Diagram {
+    const new_d: Diagram = new Diagram();
+    new_d.setTitle(this.getTitle());
+    this.forEachBlock((block: Block) => {
+      new_d.addBlock(block.copy());
+      console.log(`copied block ${block.getName()}`);
+    });
+    this.forEachBlock((block: Block) => {
+      const new_b: Block = new_d.getBlock(block.getName());
+      const conns: Connector[] = block.getConnectors();
+      for (let i: number = 0; i < conns.length; i += 1) {
+        new_b.addConnector(
+          this.getBlock(conns[i].getTo().getName()),
+          conns[i].getFromDirection(),
+          conns[i].getToDirection());
+        console.log(`copied connector ${i} for block ${block.getName()} going to ${conns[i].getTo().getName()}`);
+      }
+    });
+    return new_d;
   }
 
 
@@ -99,6 +122,13 @@ export default class Diagram {
       throw new Error(`removeBlock() can only be used when in AddingData state`);
     }
     delete this.blocks[name];
+  }
+
+
+  public reset(): void {
+    this.forEachBlock((block: Block) => {
+      block.reset();
+    });
   }
 
 

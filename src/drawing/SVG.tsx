@@ -1,6 +1,7 @@
 
 import * as React from "react";
-import * as Uuidv4 from "uuid/v4";
+// import * as Uuidv4 from "uuid/v4";
+const Uuidv4 = require("uuid/v4");
 import Block from "../core/Block";
 import Connector from "../core/Connector";
 import Diagram from "../core/Diagram";

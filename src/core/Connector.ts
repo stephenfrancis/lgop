@@ -73,20 +73,26 @@ export default class Connector {
 
 
   public output(): string {
-    return `${(this.from_dir || "")} to ${this.to} ${(this.to_dir || "")}`;
+    let seg: string = "";
+    this.lines.forEach((line: LineSegment) => {
+      seg += ", " + line.toString();
+    });
+    return `${(this.from_dir || "")} to ${this.to} ${(this.to_dir || "")}${seg}`;
   }
 
 
-  public resetLineSegments(): void {
+  public reset(): void {
     this.lines = [];
   }
 
 
-  public shift(from: Point, dir: Direction): Point {
+  public shift(from: Point, dir: Direction, other_point: Point): Point {
     const len = 20;
+    const max_x: number = Math.abs(from.getX() - other_point.getX());
+    const max_y: number = Math.abs(from.getY() - other_point.getY());
     return new Point(
-      from.getX() + (len * dir.getAngleSin()),
-      from.getY() - (len * dir.getAngleCos()),
+      from.getX() + Math.min((len * dir.getAngleSin()), max_x / 2),
+      from.getY() - Math.min((len * dir.getAngleCos()), max_y / 2),
     );
   }
 

@@ -56,4 +56,8 @@ export default class LineSegment {
     this.to   = point;
   }
 
+
+  public toString(): string {
+    return `${this.from} - ${this.to}`;
+  }
 }

@@ -28,7 +28,7 @@ export default class SimpleConnectors {
 
 
   public doConnector(connector: Connector): void {
-    connector.resetLineSegments();
+    connector.reset();
     this["doLevel" + this.sophistication](connector);
   }
 
@@ -66,10 +66,10 @@ export default class SimpleConnectors {
   public doLevel4(connector: Connector): void {
     const from_dir: Direction = connector.getFromDirection();
     const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
-    const from_shift: Point = connector.shift(from_anchor, from_dir);
     const to_dir: Direction = connector.getToDirection();
     const to_anchor: Point = connector.getTo().getAnchorPoint(to_dir);
-    const to_shift: Point = connector.shift(to_anchor, to_dir);
+    const from_shift: Point = connector.shift(from_anchor, from_dir, to_anchor);
+    const to_shift: Point = connector.shift(to_anchor, to_dir, from_anchor);
     const elbow: Point = new Point(from_shift.getX(), to_shift.getY());
     connector.addLineSegment(new LineSegment(from_anchor, from_shift));
     connector.addLineSegment(new LineSegment(from_shift, elbow));
@@ -80,6 +80,7 @@ export default class SimpleConnectors {
 
 
   public layoutDiagram(diagram: Diagram): void {
+    console.log(`SimpleConnectors.layoutDiagram() sophistication: ${this.sophistication}`);
     diagram.forEachBlock((block: Block) => {
       this.doBlock(block);
     });

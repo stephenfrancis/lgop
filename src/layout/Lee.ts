@@ -32,6 +32,7 @@ export default class Lee implements ILayout {
 
 
   public beginDiagram(diagram: Diagram): void {
+    console.log(`Lee.beginDiagram()`);
     this.clear();
     diagram.forEachBlock((block: Block) => {
       this.addBlock(block);
@@ -41,6 +42,12 @@ export default class Lee implements ILayout {
     });
   }
 
+
+  private checkInteger(arg: number): void {
+    if (!Number.isInteger(arg)) {
+      throw new Error(`must be an integer: ${arg}`);
+    }
+  }
 
   public clear(): void {
     this.cells = [];
@@ -67,27 +74,28 @@ export default class Lee implements ILayout {
     const to_p: Point = connector.getTo()  .getCentre().add(  to_dir.getDeltaUnit());
 
     this.resetScores();
-    const corner_points: Point[] = this.makeCellAt(fr_p)
-      .workOut(this, this.makeCellAt(to_p),
-        connector.getToDirection().toString().charAt(0), report);
-    let prev_point: Point = null;
-    corner_points.reverse().forEach((point: Point) => {
-      if (prev_point) {
-        connector.addLineSegment(new LineSegment(prev_point, point));
-      }
-      prev_point = point;
+    const lines: LineSegment[] = this.makeCellAt(fr_p).workOut(this,
+      this.makeCellAt(to_p), connector.getToDirection().toString().charAt(0), report);
+
+    lines.reverse().forEach((line: LineSegment) => {
+      connector.addLineSegment(line);
     });
+    // let prev_point: Point = null;
+    // corner_points.reverse().forEach((point: Point) => {
+    //   if (prev_point) {
+    //     connector.addLineSegment(new LineSegment(prev_point, point));
+    //   }
+    //   prev_point = point;
+    // });
     if (report) {
       this.output();
-      console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
+      // console.log(`From ${connector.getFrom()} to ${connector.getTo()}: ${JSON.stringify(corner_points)}`);
     }
   }
 
 
   public getMaxRadius(): number {
-    return Math.ceil(Math.sqrt(
-        Math.pow(this.max_x - this.min_x + 1, 2)
-      + Math.pow(this.max_y - this.min_y + 1, 2)));
+    return Math.ceil(this.max_x - this.min_x + this.max_y - this.min_y + 2);
   }
 
 
@@ -117,6 +125,8 @@ export default class Lee implements ILayout {
   public makeCellAt(point: Point): Cell {
     const x: number = point.getX();
     const y: number = point.getY();
+    this.checkInteger(x);
+    this.checkInteger(y);
     if (x < this.min_x) {
       this.min_x = x;
     }
@@ -142,6 +152,8 @@ export default class Lee implements ILayout {
   public makeCellAtWithinBounds(point: Point): Cell {
     const x: number = point.getX();
     const y: number = point.getY();
+    this.checkInteger(x);
+    this.checkInteger(y);
     if (x < this.min_x || x > this.max_x || y < this.min_y || y > this.max_y) {
       return null;
     }
@@ -280,38 +292,39 @@ class Cell {
     checkNeighbour(delta[proc.dir].left);
     checkNeighbour(delta[proc.dir].right);
     if (!best_neigbour) {
-      throw new Error(`workBack() failed`);
+      lee.output();
+      throw new Error(`workBack() failed at ${this.point}`);
     }
     if (proc.dir !== new_dir) {
-      proc.corner_points.push(this.point);
+      proc.lines.push(new LineSegment(this.point, proc.prev_corner));
+      proc.prev_corner = this.point;
     }
     proc.dir = new_dir;
     return best_neigbour;
   }
 
 
-  public workOut(lee: Lee, target: Cell, to_dir: string, report: boolean): Point[] {
-    // console.log(`workOut() ${this} ${target} ${this.score} ${this.block}`);
+  public workOut(lee: Lee, target: Cell, to_dir: string, report: boolean): LineSegment[] {
+    console.log(`workOut() ${this} ${target} ${this.score} ${this.block}, ${lee.getMaxRadius()}`);
     this.score = 0;
     this.workOutCellAtPosition(lee);
     for (let i: number = 1; i < lee.getMaxRadius(); i += 1) {
       this.workOutAtRadius(lee, i);
     }
-    const corner_points: Point[] = [];
     const proc: any = {
-      corner_points,
       counter: 0,
       dir: to_dir,
+      lines: [],
+      prev_corner: target.point,
     };
-    corner_points.push(target.point);
     let next_cell: Cell = target;
     while (next_cell !== this && proc.counter < 100) {
       next_cell = next_cell.workBack(lee, proc);
       proc.counter += 1;
     }
-    corner_points.push(this.point);
+    proc.lines.push(new LineSegment(this.point, proc.prev_corner));
     // console.log(`line segments: ${JSON.stringify(corner_points)} ${proc.counter}`);
-    return corner_points;
+    return proc.lines;
   }
 
 

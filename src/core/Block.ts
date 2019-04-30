@@ -13,10 +13,16 @@ export default class Block {
   private width: number = 120;
 
 
-  constructor(name: string) {
+  constructor(name: string, width?: number, height?: number, x?: number, y?: number) {
     this.connectors = [];
-    this.centre = new Point(0, 0);
+    this.centre = new Point(x || 0, y || 0);
     this.name = name;
+    if (typeof width === "number") {
+      this.setWidth(width);
+    }
+    if (typeof height === "number") {
+      this.setHeight(height);
+    }
   }
 
 
@@ -27,14 +33,18 @@ export default class Block {
   }
 
 
-  public getConnectors(): Connector[] {
-    return this.connectors;
+  public copy(): Block {
+    const new_b: Block = new Block(this.getName(), this.getWidth(), this.getHeight(),
+      this.getCentre().getX(), this.getCentre().getY());
+    new_b.setHoverText(this.getHoverText());
+    new_b.setLink(this.getLink());
+    return new_b;
   }
 
 
   public getAnchorPoint(dir: Direction): Point {
     const point: Point = new Point(
-      this.centre.getX() + (this.width * dir.getAnchorPointFractionX()),
+      this.centre.getX() + (this.width  * dir.getAnchorPointFractionX()),
       this.centre.getY() + (this.height * dir.getAnchorPointFractionY())
     );
     return point;
@@ -43,6 +53,11 @@ export default class Block {
 
   public getCentre(): Point {
     return this.centre;
+  }
+
+
+  public getConnectors(): Connector[] {
+    return this.connectors;
   }
 
 
@@ -77,6 +92,18 @@ export default class Block {
       out += "\n  " + connector.output();
     });
     return out;
+  }
+
+
+  public removeConnector(index: number): void {
+    this.connectors.splice(index, 1);
+  }
+
+
+  public reset(): void {
+    this.connectors.forEach((conn: Connector) => {
+      conn.reset();
+    });
   }
 
 
