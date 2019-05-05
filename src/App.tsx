@@ -3,7 +3,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import AjaxStore from "../../lapis/store/AjaxStore";
 // import _ from "../../lapis/node_modules/@types/underscore/index";
-import Url from "url";
+// import Url from "url";
 import Doc from "./Doc";
 import InputGen from "./InputGen";
 
@@ -82,10 +82,10 @@ class App extends React.Component<Props, State> {
 
   private makeRepoDocState(defaults?: any): State {
     const state = defaults || {};
-    const url = Url.parse(window.location.href);
-    let hash = url.hash || "";
-    if (hash) {
-      hash = hash.substr(1);
+    const index = window.location.href.indexOf("#");
+    let hash;
+    if (index > 0) {
+      hash = window.location.href.substr(index + 1);
     } else {
       hash = "README.md";
     }

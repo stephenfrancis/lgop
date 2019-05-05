@@ -68,10 +68,14 @@ export default class Lee implements ILayout {
 
   private doConnector(connector: Connector, report: boolean): void {
     const from_dir: Direction = connector.getFromDirection();
-    const fr_p: Point = connector.getFrom().getCentre().add(from_dir.getDeltaUnit());
+
+    const fr_c: Point = connector.getFrom().getCentre();
+    const fr_p: Point = fr_c.add(from_dir.getDeltaUnit());
+    connector.addLineSegment(new LineSegment(fr_c, fr_p));
 
     const to_dir: Direction = connector.getToDirection();
-    const to_p: Point = connector.getTo()  .getCentre().add(  to_dir.getDeltaUnit());
+    const to_c: Point = connector.getTo()  .getCentre();
+    const to_p: Point = to_c.add(  to_dir.getDeltaUnit());
 
     this.resetScores();
     const lines: LineSegment[] = this.makeCellAt(fr_p).workOut(this,
@@ -80,6 +84,9 @@ export default class Lee implements ILayout {
     lines.reverse().forEach((line: LineSegment) => {
       connector.addLineSegment(line);
     });
+
+    connector.addLineSegment(new LineSegment(to_p, to_c));
+
     // let prev_point: Point = null;
     // corner_points.reverse().forEach((point: Point) => {
     //   if (prev_point) {

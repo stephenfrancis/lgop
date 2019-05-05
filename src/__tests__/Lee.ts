@@ -3,86 +3,213 @@ import Block from "../core/Block";
 import Diagram from "../core/Diagram";
 import Direction from "../core/Direction";
 import FileOutput from "../drawing/FileOutput";
+import FinishConnectors from "../layout/FinishConnectors";
 import Lee from "../layout/Lee";
 import Scale from "../layout/Scale";
 
 
-test("main", () => {
+const makeBasicDiagram = () => {
   const d: Diagram = new Diagram();
   d.setTitle("Lee Test");
-  const b1: Block = new Block("top_left"    , 20, 5, 15, 10);
+  const b1: Block = new Block("top_left"    , 1, 1);
   d.addBlock(b1);
-  const b2: Block = new Block("middle"      , 20, 5, 25, 20);
-  d.addBlock(b2);
-  const b3: Block = new Block("bottom_right", 20, 5, 35, 30);
+  const b3: Block = new Block("bottom_right", 5, 5);
   d.addBlock(b3);
+  return d;
+};
+
+const finishConnectors = (d: Diagram) => {
+  const f: FinishConnectors = new FinishConnectors();
+  f.layoutDiagram(d);
+}
+
+const writeDiagram = (d: Diagram, filename: string) => {
+  const s: Scale = new Scale("svg");
+  s.beginDiagram(d);
+  while (s.iterate());
+  finishConnectors(d);
+  (new FileOutput(d)).write(filename);
+};
+
+const addMiddleObstruction = (d: Diagram) => {
+  const b2: Block = new Block("middle", 3, 3);
+  d.addBlock(b2);
+};
+
+const addBottomLeftObstruction = (d: Diagram) => {
+  const b2: Block = new Block("bottom_left", 1, 5);
+  d.addBlock(b2);
+};
+
+const addTopRightObstruction = (d: Diagram) => {
+  const b2: Block = new Block("top_right", 5, 1);
+  d.addBlock(b2);
+};
+
+
+test("check basic diagram", () => {
+  const d = makeBasicDiagram();
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
   b1.addConnector(b3, Direction.get("E"), Direction.get("W"));
 
-  expect(d.output()).toEqual("\
-  Lee Test\n\
-  ===============\n\
-[60, 47.5]\n\
-\n\
-<top_left> at [15, 10]\n\
-  E to <bottom_right> at [35, 30] W\n\
-<middle> at [25, 20]\n\
-<bottom_right> at [35, 30]\
-");
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  E to <bottom_right> at [5, 5] W");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
 
-  const d1: Diagram = d.copy();
-  const s1: Scale = new Scale();
-  s1.beginDiagram(d1);
-  while (s1.iterate());
-  (new FileOutput(d1)).write("./dist/lee_test_1.html");
+  writeDiagram(d, "./dist/lee_test_1.html");
+});
+
+
+test("no obstructions, E -> W", () => {
+  const d = makeBasicDiagram();
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("E"), Direction.get("W"));
 
   const l: Lee = new Lee();
   // console.log(l.output());
   l.beginDiagram(d);
   while (l.iterate());
 
-  // console.log(d.output());
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  E to <bottom_right> at [5, 5] W, [1, 1] - [2, 1], [2, 1] - [2, 5], [2, 5] - [4, 5], [4, 5] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
 
-  expect(d.output()).toEqual("\
-  Lee Test\n\
-  ===============\n\
-[60, 47.5]\n\
-\n\
-<top_left> at [15, 10]\n\
-  E to <bottom_right> at [35, 30] W, [16, 10] - [16, 30], [16, 30] - [34, 30]\n\
-<middle> at [25, 20]\n\
-<bottom_right> at [35, 30]\
-");
+  writeDiagram(d, "./dist/lee_test_2.html");
+});
 
-  const d2: Diagram = d.copy();
-  const s2: Scale = new Scale();
-  s2.beginDiagram(d2);
-  while (s2.iterate());
-  (new FileOutput(d2)).write("./dist/lee_test_2.html");
 
-  d.reset();
-
-  b1.removeConnector(0);
-
+test("no obstructions, N -> S", () => {
+  const d = makeBasicDiagram();
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
   b1.addConnector(b3, Direction.get("S"), Direction.get("N"));
 
+  const l: Lee = new Lee();
   l.beginDiagram(d);
   while (l.iterate());
 
-  expect(d.output()).toEqual("\
-  Lee Test\n\
-  ===============\n\
-[60, 47.5]\n\
-\n\
-<top_left> at [15, 10]\n\
-  S to <bottom_right> at [35, 30] N, [15, 11] - [35, 11], [35, 11] - [35, 29]\n\
-<middle> at [25, 20]\n\
-<bottom_right> at [35, 30]\
-");
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  S to <bottom_right> at [5, 5] N, [1, 1] - [1, 2], [1, 2] - [5, 2], [5, 2] - [5, 4], [5, 4] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
 
-  const d3: Diagram = d.copy();
-  const s3: Scale = new Scale();
-  s3.beginDiagram(d3);
-  while (s3.iterate());
-  (new FileOutput(d3)).write("./dist/lee_test_3.html");
+  writeDiagram(d, "./dist/lee_test_3.html");
+});
 
+
+test("centre obstruction, E -> W", () => {
+  const d = makeBasicDiagram();
+  addMiddleObstruction(d);
+  const b1 = d.getBlock("top_left");
+  const b2 = d.getBlock("middle");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("E"), Direction.get("W"));
+
+  const l: Lee = new Lee();
+  // console.log(l.output());
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  E to <bottom_right> at [5, 5] W, [1, 1] - [2, 1], [2, 1] - [2, 5], [2, 5] - [4, 5], [4, 5] - [5, 5]");
+  expect(b2.output()).toEqual("<middle> at [3, 3]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_4.html");
+});
+
+
+test("centre obstruction, N -> S", () => {
+  const d = makeBasicDiagram();
+  addMiddleObstruction(d);
+  const b1 = d.getBlock("top_left");
+  const b2 = d.getBlock("middle");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("S"), Direction.get("N"));
+
+  const l: Lee = new Lee();
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  S to <bottom_right> at [5, 5] N, [1, 1] - [1, 2], [1, 2] - [5, 2], [5, 2] - [5, 4], [5, 4] - [5, 5]");
+  expect(b2.output()).toEqual("<middle> at [3, 3]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_5.html");
+});
+
+
+test("no obstructions, W -> S", () => {
+  const d = makeBasicDiagram();
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("S"), Direction.get("W"));
+
+  const l: Lee = new Lee();
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  S to <bottom_right> at [5, 5] W, [1, 1] - [1, 2], [1, 2] - [1, 5], [1, 5] - [4, 5], [4, 5] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_6.html");
+});
+
+
+test("bottom left obstruction, W -> S", () => {
+  const d = makeBasicDiagram();
+  addBottomLeftObstruction(d);
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("S"), Direction.get("W"));
+
+  const l: Lee = new Lee();
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  S to <bottom_right> at [5, 5] W, [1, 1] - [1, 2], [1, 2] - [2, 2], [2, 2] - [2, 5], [2, 5] - [4, 5], [4, 5] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_7.html");
+});
+
+
+test("no obstructions, E -> N", () => {
+  const d = makeBasicDiagram();
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("N"), Direction.get("E"));
+
+  const l: Lee = new Lee();
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  N to <bottom_right> at [5, 5] E, [1, 1] - [1, 0], [1, 0] - [6, 0], [6, 0] - [6, 5], [6, 5] - [6, 5], [6, 5] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_8.html");
+});
+
+
+test("top right obstruction, E -> N", () => {
+  const d = makeBasicDiagram();
+  addTopRightObstruction(d);
+  const b1 = d.getBlock("top_left");
+  const b3 = d.getBlock("bottom_right");
+  b1.addConnector(b3, Direction.get("N"), Direction.get("E"));
+
+  const l: Lee = new Lee();
+  l.beginDiagram(d);
+  while (l.iterate());
+
+  expect(b1.output()).toEqual("<top_left> at [1, 1]\n\
+  N to <bottom_right> at [5, 5] E, [1, 1] - [1, 0], [1, 0] - [6, 0], [6, 0] - [6, 5], [6, 5] - [6, 5], [6, 5] - [5, 5]");
+  expect(b3.output()).toEqual("<bottom_right> at [5, 5]");
+
+  writeDiagram(d, "./dist/lee_test_9.html");
 });

@@ -48,7 +48,7 @@ const profiles: {[index:string]: Profile} = {
     margin_left: 1,
     margin_top: 1,
     height: 1,
-    id: "double_cell",
+    id: "triple_cell",
     inter_block_padding_x: 2,
     inter_block_padding_y: 2,
     width: 1,
@@ -64,14 +64,14 @@ export default class Scale implements ILayout {
   private min_row: number;
   private profile: any;
 
-  constructor(profile?: string) {
+  constructor(profile: string) {
     this.columns = [];
     this.rows = [];
     this.max_row = Number.NEGATIVE_INFINITY;
     this.max_col = Number.NEGATIVE_INFINITY;
     this.min_row = Number.POSITIVE_INFINITY;
     this.min_col = Number.POSITIVE_INFINITY;
-    this.setProfile(profile || "svg");
+    this.setProfile(profile);
   }
 
 

@@ -2,12 +2,14 @@
 import * as React from "react";
 import AjaxStore from "../../lapis/store/AjaxStore";
 import Diagram from "./core/Diagram";
+import FinishConnectors from "./layout/FinishConnectors";
 import ForceDirected from "./layout/ForceDirected";
-import LayoutConnectors from "./layout/LayoutConnectors";
+import Lee from "./layout/Lee";
 import MapLoader from "./loaders/MapLoader";
 import BellmanFord from "./layout/BellmanFord";
 import OverlapFixer from "./layout/OverlapFixer";
 import Scale from "./layout/Scale";
+import SimpleConnectors from "./layout/SimpleConnectors";
 import SVG from "./drawing/SVG";
 
 
@@ -77,10 +79,7 @@ export default class Doc extends React.Component<Props, State> {
           const of: OverlapFixer = new OverlapFixer();
           of.beginDiagram(diagram);
           while (of.iterate());
-          const sc: Scale = new Scale();
-          sc.beginDiagram(diagram);
-          while (sc.iterate());
-      } else {
+        } else {
           this.fd = new ForceDirected(this.props.blockFDAttraction,
             this.props.blockFDRepulsion, this.props.blockFDSpringLength,
             this.props.blockIterations, this.props.blockFDDispThresh);
@@ -125,9 +124,32 @@ export default class Doc extends React.Component<Props, State> {
 
 
   renderReady() {
-    const lc: LayoutConnectors = new LayoutConnectors(this.props.connectorSophistication);
-    lc.beginDiagram(this.state.diagram);
-    while (lc.iterate());
+    if (this.props.connectorLayout === "sc") {
+      const sc: SimpleConnectors = new SimpleConnectors(this.props.connectorSophistication);
+      sc.layoutDiagram(this.state.diagram);
+
+    } else { // Lee
+      const sc: Scale = new Scale("double_cell");
+      sc.beginDiagram(this.state.diagram);
+      while (sc.iterate());
+
+      const l: Lee = new Lee();
+      // console.log(l.output());
+      l.beginDiagram(this.state.diagram);
+      while (l.iterate());
+    }
+
+    if (this.props.blockLayout === "bf") {
+      const sc: Scale = new Scale("svg");
+      sc.beginDiagram(this.state.diagram);
+      while (sc.iterate());
+
+      if (this.props.connectorLayout !== "sc") {
+        const fc: FinishConnectors = new FinishConnectors();
+        fc.layoutDiagram(this.state.diagram);
+      }
+    }
+
     const svg: SVG = new SVG();
 
     return (

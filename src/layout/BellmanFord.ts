@@ -91,11 +91,11 @@ export default class BellmanFord implements ILayout {
       this.addBlock(block.getName());
     });
     diagram.forEachBlock((block: Block) => {
-        block.getConnectors().forEach((connector: Connector) => {
-        this.addRelationship(
-          block.getName(),
-          connector.getTo().getName(),
-          connector.getFromDirection().getId());
+      block.getConnectors().forEach((connector: Connector) => {
+      this.addRelationship(
+        block.getName(),
+        connector.getTo().getName(),
+        connector.getFromDirection().getId());
       });
     });
   }

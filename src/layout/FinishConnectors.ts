@@ -24,20 +24,24 @@ export default class FinishConnectors {
   public doConnector(connector: Connector): void {
     let first_line: LineSegment = null;
     let  last_line: LineSegment = null;
-    const from_dir: Direction = connector.getFromDirection();
-    const to_dir: Direction = connector.getToDirection();
-    const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
-    const to_anchor: Point = connector.getTo().getAnchorPoint(to_dir);
     connector.forEachLineSegment((line: LineSegment) => {
       if (!first_line) {
         first_line = line;
       }
       last_line = line;
     });
-    connector.addLineSegment(new LineSegment(from_anchor, first_line.getFrom()));
-    const v: Vector = Vector.between(to_anchor, last_line.getTo());
-    connector.addLineSegment(new LineSegment(last_line.getTo(), to_anchor, null, v.getBearing() + 180));
-    // this.output();
+    if (first_line) {
+      const from_dir: Direction = connector.getFromDirection();
+      const from_anchor: Point = connector.getFrom().getAnchorPoint(from_dir);
+      first_line.setFrom(from_anchor);
+    }
+    if (last_line) {
+      const to_dir: Direction = connector.getToDirection();
+      const to_anchor: Point = connector.getTo().getAnchorPoint(to_dir);
+      const v: Vector = Vector.between(to_anchor, last_line.getTo());
+      last_line.setTo(to_anchor);
+      last_line.setArrowheadBearingTo(v.getBearing());
+    }
   }
 
 

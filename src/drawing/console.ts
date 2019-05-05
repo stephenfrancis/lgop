@@ -31,7 +31,7 @@ const le: Lee = new Lee();
 le.beginDiagram(diagram);
 while (le.iterate());
 
-const s2: Scale = new Scale();
+const s2: Scale = new Scale("svg");
 s2.beginDiagram(diagram);
 while (s2.iterate());
 

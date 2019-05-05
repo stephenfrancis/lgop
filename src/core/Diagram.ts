@@ -1,6 +1,7 @@
 
 import Block from "./Block";
 import Connector from "./Connector";
+import LineSegment from "./LineSegment";
 
 export enum State {
   AddingData,
@@ -42,11 +43,19 @@ export default class Diagram {
       const new_b: Block = new_d.getBlock(block.getName());
       const conns: Connector[] = block.getConnectors();
       for (let i: number = 0; i < conns.length; i += 1) {
-        new_b.addConnector(
+        const new_c: Connector = new_b.addConnector(
           this.getBlock(conns[i].getTo().getName()),
           conns[i].getFromDirection(),
           conns[i].getToDirection());
         console.log(`copied connector ${i} for block ${block.getName()} going to ${conns[i].getTo().getName()}`);
+        conns[i].forEachLineSegment((line: LineSegment) => {
+          new_c.addLineSegment(new LineSegment(
+            line.getFrom(),
+            line.getTo(),
+            line.getArrowheadBearingFrom(),
+            line.getArrowheadBearingTo()
+          ));
+        });
       }
     });
     return new_d;
@@ -82,24 +91,24 @@ export default class Diagram {
   public getMaxX(): number {
     let max_x: number = Number.NEGATIVE_INFINITY;
     this.forEachBlock((block) => {
-      const x: number = block.getCentre().getX() + (block.getWidth() / 2);
+      const x: number = block.getMaxX();
       if (x > max_x) {
         max_x = x;
       }
     });
-    return max_x + 15; // allow for border and connector paths
+    return max_x + 10; // allow for border and connector paths
   }
 
 
   public getMaxY(): number {
     let max_y: number = Number.NEGATIVE_INFINITY;
     this.forEachBlock((block) => {
-      const y: number = block.getCentre().getY() + (block.getHeight() / 2);
+      const y: number = block.getMaxY();
       if (y > max_y) {
         max_y = y;
       }
     });
-    return max_y + 15; // allow for border and connector paths
+    return max_y + 10; // allow for border and connector paths
   }
 
 

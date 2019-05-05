@@ -17,7 +17,7 @@ test("readMars", () => {
   const of: OverlapFixer = new OverlapFixer();
   of.beginDiagram(diagram);
   while (of.iterate());
-  // const sc: Scale = new Scale();
+  // const sc: Scale = new Scale("svg");
   // sc.layoutDiagram(diagram);
   console.log(diagram.output());
 });

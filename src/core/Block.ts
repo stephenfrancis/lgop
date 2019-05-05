@@ -1,6 +1,7 @@
 
 import Connector from "./Connector";
 import Direction from "./Direction";
+import LineSegment from "./LineSegment";
 import Point from "./Point";
 
 export default class Block {
@@ -13,16 +14,16 @@ export default class Block {
   private width: number = 120;
 
 
-  constructor(name: string, width?: number, height?: number, x?: number, y?: number) {
+  constructor(name: string, /* width?: number, height?: number, */ x?: number, y?: number) {
     this.connectors = [];
     this.centre = new Point(x || 0, y || 0);
     this.name = name;
-    if (typeof width === "number") {
-      this.setWidth(width);
-    }
-    if (typeof height === "number") {
-      this.setHeight(height);
-    }
+    // if (typeof width === "number") {
+    //   this.setWidth(width);
+    // }
+    // if (typeof height === "number") {
+    //   this.setHeight(height);
+    // }
   }
 
 
@@ -34,8 +35,7 @@ export default class Block {
 
 
   public copy(): Block {
-    const new_b: Block = new Block(this.getName(), this.getWidth(), this.getHeight(),
-      this.getCentre().getX(), this.getCentre().getY());
+    const new_b: Block = new Block(this.getName(), this.getCentre().getX(), this.getCentre().getY());
     new_b.setHoverText(this.getHoverText());
     new_b.setLink(this.getLink());
     return new_b;
@@ -73,6 +73,40 @@ export default class Block {
 
   public getLink(): string {
     return this.link_url;
+  }
+
+
+  public getMaxX(): number {
+    let out: number = this.getCentre().getX() + (this.getWidth() / 2);
+    const checkCoord = (point: Point) => {
+      if (point.getX() > out) {
+        out = point.getX();
+      }
+    };
+    this.connectors.forEach((connector: Connector) => {
+      connector.forEachLineSegment((line: LineSegment) => {
+        checkCoord(line.getFrom());
+        checkCoord(line.getTo());
+      });
+    });
+    return out;
+  }
+
+
+  public getMaxY(): number {
+    let out: number = this.getCentre().getY() + (this.getHeight() / 2);
+    const checkCoord = (point: Point) => {
+      if (point.getY() > out) {
+        out = point.getY();
+      }
+    };
+    this.connectors.forEach((connector: Connector) => {
+      connector.forEachLineSegment((line: LineSegment) => {
+        checkCoord(line.getFrom());
+        checkCoord(line.getTo());
+      });
+    });
+    return out;
   }
 
 
