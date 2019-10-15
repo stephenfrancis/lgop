@@ -30,7 +30,8 @@
       "url": "https://lgop/"
     }
   },
-  "devDependencies": {
+  "dependencies": {
+    "@types/jest": "^23.3.1",
     "@types/loglevel": "^1.5.3",
     "@types/node": "^9.4.6",
     "@types/react": "^16.3.12",
@@ -51,8 +52,5 @@
     "webpack-cli": "^2.0.15",
     "webpack-dev-server": "^3.1.3",
     "webpack-merge": "^4.1.2"
-  },
-  "dependencies": {
-    "@types/jest": "^23.3.1"
   }
 }
