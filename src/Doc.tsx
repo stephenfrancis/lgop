@@ -1,16 +1,18 @@
 
 import * as React from "react";
 import AjaxStore from "../../lapis/store/AjaxStore";
-import Diagram from "./core/Diagram";
-import FinishConnectors from "./layout/FinishConnectors";
-import ForceDirected from "./layout/ForceDirected";
-import Lee from "./layout/Lee";
-import MapLoader from "./loaders/MapLoader";
-import BellmanFord from "./layout/BellmanFord";
-import OverlapFixer from "./layout/OverlapFixer";
-import Scale from "./layout/Scale";
-import SimpleConnectors from "./layout/SimpleConnectors";
-import SVG from "./drawing/SVG";
+import * as Diagram from "diagram-api";
+
+// import Diagram from "./core/Diagram";
+// import FinishConnectors from "./layout/FinishConnectors";
+// import ForceDirected from "./layout/ForceDirected";
+// import Lee from "./layout/Lee";
+// import MapLoader from "./loaders/MapLoader";
+// import BellmanFord from "./layout/BellmanFord";
+// import OverlapFixer from "./layout/OverlapFixer";
+// import Scale from "./layout/Scale";
+// import SimpleConnectors from "./layout/SimpleConnectors";
+// import SVG from "./drawing/SVG";
 
 
 // const Log = RootLog.getLogger("lgop.Doc");
@@ -31,12 +33,12 @@ interface Props {
 
 interface State {
   ready: boolean;
-  diagram: Diagram;
+  domain: Diagram.Domain;
   iteration: number;
 }
 
 export default class Doc extends React.Component<Props, State> {
-  private fd: ForceDirected;
+  private fd: Diagram.ForceDirected;
   private proceed: boolean;
 
   constructor(props) {
@@ -67,23 +69,23 @@ export default class Doc extends React.Component<Props, State> {
     };
     props.store.getDoc(props.docId)
       .then((doc: { id: string, content: string }) => {
-        const diagram: Diagram = new Diagram();
-        const loader = new MapLoader(diagram);
+        const domain: Diagram.Domain = new Diagram.Domain();
+        const loader = new Diagram.MapLoader(domain);
         loader.parseContent(doc.content);
 
         console.log(`Doc.load():getDoc() blockLayout? ${this.props.blockLayout}`);
         if (this.props.blockLayout === "bf") {
-          const bf: BellmanFord = new BellmanFord();
-          bf.beginDiagram(diagram);
+          const bf: Diagram.BellmanFord = new Diagram.BellmanFord();
+          bf.beginDomain(domain);
           while (bf.iterate());
-          const of: OverlapFixer = new OverlapFixer();
-          of.beginDiagram(diagram);
+          const of: Diagram.OverlapFixer = new Diagram.OverlapFixer();
+          of.beginDomain(domain);
           while (of.iterate());
         } else {
-          this.fd = new ForceDirected(this.props.blockFDAttraction,
+          this.fd = new Diagram.ForceDirected(this.props.blockFDAttraction,
             this.props.blockFDRepulsion, this.props.blockFDSpringLength,
             this.props.blockIterations, this.props.blockFDDispThresh);
-          this.fd.beginDiagram(diagram);
+          this.fd.beginDomain(domain);
           this.proceed = true;
           iterate();
         }
@@ -96,9 +98,9 @@ export default class Doc extends React.Component<Props, State> {
 
         this.setState({
           ready: true,
-          diagram: diagram,
+          domain: domain,
         });
-      }) as Promise<void>;
+      });
   }
 
 
@@ -125,37 +127,35 @@ export default class Doc extends React.Component<Props, State> {
 
   renderReady() {
     if (this.props.connectorLayout === "sc") {
-      const sc: SimpleConnectors = new SimpleConnectors(this.props.connectorSophistication);
-      sc.layoutDiagram(this.state.diagram);
+      const sc: Diagram.SimpleConnectors = new Diagram.SimpleConnectors(this.props.connectorSophistication);
+      sc.layoutDomain(this.state.domain);
 
     } else { // Lee
-      const sc: Scale = new Scale("double_cell");
-      sc.beginDiagram(this.state.diagram);
+      const sc: Diagram.Scale = new Diagram.Scale("double_cell");
+      sc.beginDomain(this.state.domain);
       while (sc.iterate());
 
-      const l: Lee = new Lee();
+      const l: Diagram.Lee = new Diagram.Lee();
       // console.log(l.output());
-      l.beginDiagram(this.state.diagram);
+      l.beginDomain(this.state.domain);
       while (l.iterate());
     }
 
     if (this.props.blockLayout === "bf") {
-      const sc: Scale = new Scale("svg");
-      sc.beginDiagram(this.state.diagram);
+      const sc: Diagram.Scale = new Diagram.Scale("svg");
+      sc.beginDomain(this.state.domain);
       while (sc.iterate());
 
       if (this.props.connectorLayout !== "sc") {
-        const fc: FinishConnectors = new FinishConnectors();
-        fc.layoutDiagram(this.state.diagram);
+        const fc: Diagram.FinishConnectors = new Diagram.FinishConnectors();
+        fc.layoutDomain(this.state.domain);
       }
     }
 
-    const svg: SVG = new SVG();
-
     return (
       <div>
-        <h1>{this.state.diagram.getTitle()}</h1>
-        {svg.drawDiagram(this.state.diagram)}
+        <h1>{this.state.domain.getTitle()}</h1>
+        {this.state.domain.draw().getMarkup()}
       </div>
     );
   }
