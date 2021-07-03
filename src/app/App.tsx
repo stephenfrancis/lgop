@@ -1,12 +1,10 @@
-
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import AjaxStore from "lapis/store/AjaxStore";
+import AjaxStore from "ultistore/src/AjaxStore";
 import RootLog from "loglevel";
 import _ from "underscore";
 import Url from "url";
 import Doc from "./Doc";
-
 
 /* globals window */
 
@@ -21,7 +19,6 @@ Store.setResponseConverter(function (url: string, str: string): any {
     content: str,
   };
 });
-
 
 interface Props {}
 
@@ -41,11 +38,9 @@ class App extends React.Component<Props, State> {
     this.state = this.makeRepoDocState();
   }
 
-
   private hashChange() {
     this.setState(this.makeRepoDocState());
   }
-
 
   private makeRepoDocState(): State {
     const url = Url.parse(window.location.href);
@@ -61,7 +56,6 @@ class App extends React.Component<Props, State> {
     return state;
   }
 
-
   render() {
     return (
       <div>
@@ -69,9 +63,6 @@ class App extends React.Component<Props, State> {
       </div>
     );
   }
-
-
 }
 
-ReactDOM.render(<App />,
-  window.document.getElementById("app_dynamic"));
+ReactDOM.render(<App />, window.document.getElementById("app_dynamic"));

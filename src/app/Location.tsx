@@ -1,7 +1,6 @@
-
 import * as React from "react";
 import RootLog from "loglevel";
-import * as Uuidv4 from "uuid/v4";
+import { v4 as uuidv4 } from "uuid";
 import Block from "./Block";
 import Cell from "./Cell";
 import Direction from "./Direction";
@@ -12,20 +11,18 @@ const Log = RootLog.getLogger("lgop.Location");
 class Location {
   private block: Block;
   private col: number;
-  private directions: { [index: string]: Location, };
+  private directions: { [index: string]: Location };
   private elmt_id: string;
   private positioned: boolean = false;
   private row: number;
   private z: number;
-  private static locations: { [index: string]: Location, } = {};
-
+  private static locations: { [index: string]: Location } = {};
 
   constructor(name: string) {
     this.block = new Block(name);
     this.directions = {};
-    this.elmt_id = Uuidv4();
+    this.elmt_id = uuidv4();
   }
-
 
   public addDirection(direction: string, other_location: string): void {
     const dir: Direction = Direction.get(direction);
@@ -40,11 +37,9 @@ class Location {
     this.positionRelativeIfNecessary(direction);
   }
 
-
   public addLink(link_url: string, link_text?: string): void {
     this.block.setLink(link_url, link_text);
   }
-
 
   public draw(done_locations?): JSX.Element {
     done_locations = done_locations || [];
@@ -56,15 +51,12 @@ class Location {
     content.push(this.block.svg());
     content.push(this.block.svgText());
     done_locations.push(this);
-    Object.keys(this.directions).forEach(dir => {
+    Object.keys(this.directions).forEach((dir) => {
       content.push(this.directions[dir].draw(done_locations));
     });
     content.push(this.block.svgConnectors());
-    return (
-      <g key={this.elmt_id}>{content}</g>
-    );
+    return <g key={this.elmt_id}>{content}</g>;
   }
-
 
   public checkPositioned(): void {
     if (!this.positioned) {
@@ -72,11 +64,9 @@ class Location {
     }
   }
 
-
   public static clear(): void {
     Location.locations = {};
   }
-
 
   public getDirection(direction: string): Location {
     if (!this.directions[direction]) {
@@ -85,16 +75,13 @@ class Location {
     return this.directions[direction];
   }
 
-
-  public getDirections(): { [index: string]: Location, } {
+  public getDirections(): { [index: string]: Location } {
     return this.directions;
   }
-
 
   public getId(): string {
     return this.block.getName().replace(/\s+/g, "_").toLowerCase();
   }
-
 
   public static getLocation(name: string): Location {
     name = name.trim();
@@ -103,7 +90,6 @@ class Location {
     }
     return Location.locations[name];
   }
-
 
   private positionRelativeIfNecessary(direction: string): void {
     this.checkPositioned();
@@ -114,19 +100,18 @@ class Location {
         other_location.setPosition(
           this.col + d.getDeltaCol(),
           this.row + d.getDeltaRow(),
-          this.z   + d.getDeltaZ());
+          this.z + d.getDeltaZ()
+        );
       }
     }
   }
 
-
   public setBlockCoordinates(): void {
     const point: Point = Cell.getCell(this.row, this.col).getPosition(this.z);
-    Log.debug(`setBlockCoords() ${point.getX()}, ${point.getY()}`)
+    Log.debug(`setBlockCoords() ${point.getX()}, ${point.getY()}`);
     this.block.getCentre().setX(point.getX());
     this.block.getCentre().setY(point.getY());
   }
-
 
   public setPosition(col: number, row: number, z: number): void {
     this.col = col;
@@ -134,7 +119,6 @@ class Location {
     this.positioned = true;
     this.z = Cell.getCell(row, col).addLocation(this, z);
   }
-
 }
 
 export default Location;

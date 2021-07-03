@@ -1,12 +1,9 @@
-
 import * as React from "react";
 import RootLog from "loglevel";
-import AjaxStore from "lapis/store/AjaxStore";
+import AjaxStore from "ultistore/src/AjaxStore";
 import Map from "./Map";
 
-
 const Log = RootLog.getLogger("lgop.Doc");
-
 
 interface Props {
   store: AjaxStore;
@@ -19,7 +16,6 @@ interface State {
 }
 
 export default class Doc extends React.Component<Props, State> {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -28,12 +24,12 @@ export default class Doc extends React.Component<Props, State> {
     this.load(props);
   }
 
-
   private load(props: Props) {
     const that = this;
     Log.debug(`Map.load() getting: props.doc_id: ${props.doc_id}`);
-    props.store.getDoc(props.doc_id)
-      .then(function (doc: { id: string, content: string }): void {
+    props.store
+      .getDoc(props.doc_id)
+      .then(function (doc: { id: string; content: string }): void {
         that.setState({
           ready: true,
           map: new Map(doc.id, doc.content),
@@ -41,12 +37,9 @@ export default class Doc extends React.Component<Props, State> {
       }) as Promise<void>;
   }
 
-
-
   componentWillReceiveProps(next_props) {
     this.load(next_props);
   }
-
 
   render() {
     if (this.state.ready) {
@@ -55,13 +48,9 @@ export default class Doc extends React.Component<Props, State> {
     return this.renderUnready();
   }
 
-
   renderUnready() {
-    return (
-      <div>Loading...</div>
-    );
+    return <div>Loading...</div>;
   }
-
 
   renderReady() {
     return (
@@ -71,5 +60,4 @@ export default class Doc extends React.Component<Props, State> {
       </div>
     );
   }
-
 }
